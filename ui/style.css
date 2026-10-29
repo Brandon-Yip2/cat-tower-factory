@@ -52,8 +52,7 @@ p { margin: 0 0 8px; }
   display: flex; flex-direction: column; gap: 18px; background: var(--surface);
 }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-weight: 700; line-height: 1.1; }
-.brand svg { width: 30px; height: 30px; fill: var(--accent); }
-.brand svg .w { fill: var(--surface); }
+.brand svg { width: 34px; height: 34px; flex: none; }
 .brand small { font-weight: 400; color: var(--muted); }
 nav { display: flex; flex-direction: column; gap: 2px; }
 nav a {

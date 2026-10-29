@@ -35,7 +35,10 @@ $lnk.WorkingDirectory = Split-Path $factory -Parent
 $lnk.Description = 'Starts the Cat Tower Factory daemon'
 $lnk.Save()
 
-Set-Content -Path $deskLink -Value "[InternetShortcut]`r`nURL=$url`r`n" -Encoding ASCII
+$icon = Join-Path $factory 'ui\factory.ico'
+$lnk.IconLocation = "$icon,0"
+$lnk.Save()
+Set-Content -Path $deskLink -Value "[InternetShortcut]`r`nURL=$url`r`nIconFile=$icon`r`nIconIndex=0`r`n" -Encoding ASCII
 
 $running = $false
 try { $running = (Invoke-WebRequest "$url/api/home" -UseBasicParsing -TimeoutSec 2).StatusCode -eq 200 } catch {}

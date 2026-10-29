@@ -130,7 +130,7 @@ test('stopping a run puts its idea on hold', () => {
   assert.equal(db.prepare('SELECT status FROM ideas WHERE id = ?').get(i.id).status, 'on_hold');
 });
 
-test('dependencies: an idea waits until the ideas it depends on have shipped', async () => {
+test('dependencies: a waiting idea prepares now instead of sitting idle', async () => {
   const { db, cfg } = fixture();
   const { dispatchTick: tick } = await import('../lib/dispatcher.mjs');
   const runner = fakeRunner(db);
@@ -140,10 +140,9 @@ test('dependencies: an idea waits until the ideas it depends on have shipped', a
   updateIdea(db, cfg, second.id, { status: 'triaged', owner_role: 'engineering-lead' }, 'owner');
   updateIdea(db, cfg, first.id, { status: 'triaged', owner_role: 'art-director' }, 'owner');
   tick(db, cfg, runner);
-  assert.deepEqual(runner.started.map((s) => s.ideaId), [first.id]);
-  updateIdea(db, cfg, first.id, { status: 'shipped' }, 'qa-lead');
-  tick(db, cfg, runner);
-  assert.deepEqual(runner.started.map((s) => s.ideaId), [first.id, second.id]);
+  // The ready idea builds; the waiting one starts preparing (Studio stays locked for it).
+  assert.deepEqual(runner.started.map((s) => [s.ideaId, s.purpose.split(' ')[0]]), [[first.id, 'Build'], [second.id, 'Prepare']]);
+  assert.match(runner.started[1].prompt, /your turn in Roblox Studio comes after #[0-9]+ ships/);
   assert.throws(() => updateIdea(db, cfg, second.id, { depends_on: [second.id] }, 'owner'), /itself/);
 });
 

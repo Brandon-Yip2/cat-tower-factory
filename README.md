@@ -37,7 +37,8 @@ To run it in a console instead: `./factory/start.ps1`.
 
 | You want to… | Do this |
 | --- | --- |
-| Give the team work | **New idea** (sidebar). It lands in the inbox; triage routes it. |
+| Give the team work | **New idea** (sidebar). It lands in the inbox; triage routes it to **Up next**. |
+| Order work | An idea can wait for others ("waiting for #N"). It still starts right away on everything that doesn't need Studio, moves to **Staged**, and gets its Studio turn once #N ships. |
 | Answer an agent | **Home → Needs you**. One click on a choice, or type an answer. The agent resumes in the same session. |
 | Approve a brand-new agent idea | It shows in **Needs you** and the **Needs approval** tab. Everything else proceeds on its own. |
 | Talk to one agent | **Agents** → pick the role → chat. A running agent gets your message at its next step; an idle one is resumed or started. |

@@ -142,3 +142,54 @@ test('scheduler: fires once per slot, skips disabled, catches up recent misses o
   setEnabled(db, 'morning-triage', false);
   assert.equal(loopView(db, cfg, nine).find((l) => l.id === 'morning-triage').enabled, false);
 });
+
+test('prepare, stage, then get the Studio turn in the same session once the dependency ships', async () => {
+  const { db, cfg } = fixture();
+  const { handleHook } = await import('../lib/hookcore.mjs');
+  const runner = fakeRunner(db);
+  const a = createIdea(db, cfg, { title: 'Config batch', origin: 'owner' });
+  const b = createIdea(db, cfg, { title: 'Combat push', origin: 'owner', dependsOn: [a.id] });
+  updateIdea(db, cfg, a.id, { status: 'triaged', owner_role: 'engineering-lead' }, 'owner');
+  updateIdea(db, cfg, b.id, { status: 'triaged', owner_role: 'balance-lead' }, 'owner');
+  dispatchTick(db, cfg, runner);
+  const [runA, runB] = runner.started;
+  assert.equal(runB.ideaId, b.id);
+  assert.match(runB.purpose, /^Prepare/);
+
+  // While #a is unshipped, b's run is blocked from Studio but a's is not.
+  const studio = { session_id: 's', tool_name: 'mcp__Roblox_Studio__execute_luau', tool_input: {} };
+  const denied = handleHook(db, cfg, 'PreToolUse', studio, { FACTORY_RUN_ID: runB.id });
+  assert.match(denied.hookSpecificOutput.permissionDecisionReason, /may not use Roblox Studio until #\d+ ships/);
+  assert.equal(handleHook(db, cfg, 'PreToolUse', studio, { FACTORY_RUN_ID: runA.id }), null);
+
+  // b finishes preparing and stages; nothing happens for it until a ships.
+  updateIdea(db, cfg, b.id, { status: 'staged', note: 'ready to push' }, 'balance-lead');
+  runner.end(runB.id);
+  dispatchTick(db, cfg, runner);
+  assert.equal(runner.started.length, 2);
+
+  updateIdea(db, cfg, a.id, { status: 'shipped' }, 'qa-lead');
+  runner.end(runA.id);
+  dispatchTick(db, cfg, runner);
+  const turn = runner.started[2];
+  assert.equal(turn.resumed, runB.id, 'the preparing session is resumed');
+  assert.match(turn.prompt, /Your turn in Roblox Studio/);
+  assert.equal(db.prepare('SELECT status FROM ideas WHERE id = ?').get(b.id).status, 'building');
+});
+
+test('ready Studio work gets a slot before preparation work', () => {
+  const { db, cfg } = fixture();
+  const runner = fakeRunner(db);
+  const base = createIdea(db, cfg, { title: 'Base', origin: 'owner' });
+  updateIdea(db, cfg, base.id, { status: 'building', owner_role: 'engineering-lead' }, 'owner');
+  for (let k = 0; k < 3; k += 1) {
+    const w = createIdea(db, cfg, { title: `waits ${k}`, origin: 'owner', dependsOn: [base.id], priority: 1 });
+    updateIdea(db, cfg, w.id, { status: 'triaged', owner_role: 'audio-director' }, 'owner');
+  }
+  const ready = createIdea(db, cfg, { title: 'Ready low priority', origin: 'owner', priority: 3 });
+  updateIdea(db, cfg, ready.id, { status: 'triaged', owner_role: 'narrative-director' }, 'owner');
+  dispatchTick(db, cfg, runner);
+  const order = runner.started.map((s) => s.ideaId);
+  assert.deepEqual(order.slice(0, 2), [base.id, ready.id]);
+  assert.equal(order.length, cfg.guards.maxConcurrentRuns);
+});

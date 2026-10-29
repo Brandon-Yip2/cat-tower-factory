@@ -50,8 +50,9 @@ async function act(fn, ok) {
 }
 
 const STAGES = [
-  { id: 'inbox', name: 'Inbox' }, { id: 'needs_approval', name: 'Needs approval' }, { id: 'triaged', name: 'Triaged' },
-  { id: 'spec', name: 'Spec' }, { id: 'building', name: 'Building' }, { id: 'qa', name: 'QA' }, { id: 'on_hold', name: 'On hold' },
+  { id: 'inbox', name: 'Inbox' }, { id: 'needs_approval', name: 'Needs approval' }, { id: 'triaged', name: 'Up next' },
+  { id: 'spec', name: 'Spec' }, { id: 'building', name: 'Building' }, { id: 'staged', name: 'Staged' }, { id: 'qa', name: 'QA' },
+  { id: 'on_hold', name: 'On hold' },
 ];
 const STAGE_NAME = Object.fromEntries([...STAGES.map((s) => [s.id, s.name]), ['shipped', 'Shipped'], ['rejected', 'Rejected']]);
 const ORIGIN = { owner: 'you', agent: 'an agent', loop: 'a loop', qa: 'QA' };
@@ -153,10 +154,10 @@ pages.home = {
     wireRelease($('#tools'));
     const p = h.pipeline;
     const floors = [
-      ['shipped', 'Shipped', 'roof'], ['qa', 'In QA'], ['building', 'Building'], ['spec', 'Spec'], ['triaged', 'Triaged'],
+      ['shipped', 'Shipped', 'roof'], ['qa', 'In QA'], ['staged', 'Staged, waiting for Studio'], ['building', 'Building'], ['spec', 'Spec'], ['triaged', 'Up next'],
       ['needs_approval', 'Needs approval', p.needs_approval ? 'hot' : ''], ['inbox', 'Inbox'],
     ];
-    $('#tower').innerHTML = `<div class="tower">${floors.map(([id, name, cls = '']) => `<a class="floor ${cls} ${['building', 'qa', 'spec'].includes(id) && p[id] ? 'live' : ''}" href="#ideas/${id}">
+    $('#tower').innerHTML = `<div class="tower">${floors.map(([id, name, cls = '']) => `<a class="floor ${cls} ${['building', 'qa', 'spec', 'staged'].includes(id) && p[id] ? 'live' : ''}" href="#ideas/${id}">
       <span>${name}</span><b>${p[id] || 0}</b></a>`).join('')}</div><div class="tower-base"></div>
       <p class="muted small" style="margin-top:8px">${esc(h.pass || 'All passes')}. ${p.on_hold ? `${p.on_hold} on hold.` : ''}</p>`;
     $('#coming').innerHTML = h.comingUp.length ? h.comingUp.map((l) => `<div class="row"><div class="main"><div class="title">${esc(l.name)}</div>
@@ -216,7 +217,7 @@ pages.ideas = {
     }
     const row = (i) => `<div class="row click" data-idea="${i.id}">
       <div class="main"><div class="title">#${i.id} ${esc(i.title)}</div>
-      <div class="sub">From ${esc(i.origin === 'owner' ? 'you' : i.originName || ORIGIN[i.origin])}${i.area ? `, ${esc(i.area)}` : ''}${i.owner_role ? `, built by ${esc(i.ownerName)}` : ''}${i.rework_count ? `, sent back ${i.rework_count}×` : ''}${i.depends_on ? `, after ${JSON.parse(i.depends_on).map((d) => `#${d}`).join(', ')}` : ''}</div></div>
+      <div class="sub">From ${esc(i.origin === 'owner' ? 'you' : i.originName || ORIGIN[i.origin])}${i.area ? `, ${esc(i.area)}` : ''}${i.owner_role ? `, built by ${esc(i.ownerName)}` : ''}${i.rework_count ? `, sent back ${i.rework_count}×` : ''}${i.waiting?.length ? `, waiting for ${i.waiting.map((d) => `#${d}`).join(', ')}` : ''}</div></div>
       <div class="side-info">${i.status === 'rejected' ? '<span class="pill">Rejected</span>' : i.rating === 'redo' ? '<span class="pill attention">Redo</span>' : i.rating === 'good' ? '<span class="pill leaf">Good</span>' : ''}<br>${ago(i.shipped_at || i.updated_at)}</div></div>`;
     if (f.tab !== 'done') { list.innerHTML = `<div class="rows">${data.ideas.map(row).join('')}</div>`; wireIdeaLinks(list); return; }
     const weeks = new Map();

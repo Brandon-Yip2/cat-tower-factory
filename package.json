@@ -1,0 +1,13 @@
+{
+  "name": "cattower-factory",
+  "private": true,
+  "type": "module",
+  "description": "Cat Tower Factory: local autonomous agent harness (daemon, dashboard, hooks, MCP).",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0"
+  }
+}

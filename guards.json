@@ -1,0 +1,28 @@
+{
+  "_comment": "Safety limits. Agents (including the Factory Engineer) cannot edit this file; only the owner can.",
+  "maxConcurrentRuns": 3,
+  "dailyTokenBudget": 60000000,
+  "maxRunsPerIdea": 10,
+  "maxRework": 3,
+  "idleReleaseMinutes": 10,
+  "studioIdleMinutes": 30,
+  "catchUpHours": 12,
+  "runCapUsd": { "haiku": 8, "sonnet": 8, "opus": 20 },
+  "approval": {
+    "ownerIdeasAutoApproved": true,
+    "agentFeaturesWithoutParentNeedOwner": true
+  },
+  "learning": {
+    "window": 5,
+    "modelRedosToBump": 2,
+    "tiers": ["haiku", "sonnet", "opus"]
+  },
+  "protectedPaths": [
+    "factory/guards.json",
+    ".claude/settings.json",
+    ".claude/settings.local.json",
+    "factory/hooks/",
+    "factory/lib/",
+    "factory/server.mjs"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "factory": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["factory/mcp/server.mjs"]
+    }
+  }
+}

@@ -11,6 +11,9 @@ If Roblox Studio is busy (another agent holds it), that is not a blocker: do eve
 end your turn with a one-line status. The Factory resumes you when Studio frees up. Use status "on_hold" only for a
 blocker that needs the owner, together with ask_owner.
 
+If QA sends the idea back, fix every listed point, re-run the exact check QA named (not just verify.mjs), and say
+in the note which check you re-ran and its result; the Audio cue rework on #7 came from skipping this.
+
 Before you finish, add follow-up work you noticed for the other roles with add_task (one call each, specific, under
 the idea it serves; bugs and cleanups under "Bug fixes and polish"). A brand-new feature goes to propose_idea as a
 suggestion for the Game Manager. Check list_backlog first so you don't

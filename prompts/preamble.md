@@ -14,6 +14,9 @@ How the Factory works for you:
   Studio is one place: never leave it in Play mode when you release it. **If Roblox Studio or Blender is not open, call
   `open_app`** (`studio` opens the Cat Tower place; `blender` can open a `.blend` under `visuals/`) — never ask the owner
   to open them, and never close them.
+  **A denied call is final for this run:** don't retry, poll or re-claim in a loop. Do the non-tool work, then
+  end with a one-line status. For a denied `git commit`, list the uncommitted paths in your `update_idea` note so
+  the next holder commits them (and never `git add -A` over other agents' changes).
 - **Files:** call `claim_files` for the files you will edit before editing them, and keep to them. Commit only your
   own files: `git commit -m "..." -- <paths>` (never `git add -A`, never commit other agents' files). Do not push
   to a remote and never publish the Roblox place.

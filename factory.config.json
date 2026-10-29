@@ -169,6 +169,15 @@
       "prompt": "Checkpoint. Run node tools/verify.mjs. Using factory_status, find files touched by finished runs that are still uncommitted (git status); never commit a file a live run has claimed or is editing. Commit the finished files with a message crediting the roles. If verify fails, propose_idea a kind 'bug' describing the failure instead of committing."
     },
     {
+      "id": "commit-steward",
+      "name": "Commit steward",
+      "cron": "15 */2 * * *",
+      "role": "game-manager",
+      "taskType": "ops-commit",
+      "enabled": true,
+      "prompt": "Commit steward (catches work left uncommitted after a denied commit). 1) Call who_is_using for git; if another run holds it, end with a one-line status and do not retry. 2) Run git status --porcelain; if clean, say so and stop. 3) Call factory_status for claimed files and live runs. Never commit a file a live run has claimed or is editing. 4) Find uncommitted paths that finished runs left behind: recent update_idea notes (get_idea on ideas in qa or shipped that mention uncommitted paths) and team/logs/. 5) Per role, make one commit of just that role's finished files: git commit -m \"<role>: <what> (#id)\" -- <paths> (never git add -A; skip paths you cannot attribute and list them in your summary). Run node tools/verify.mjs first only if place/ or tools/ files are included; if it fails, commit nothing and propose_idea kind 'bug'. If the commit is denied, stop: that is final for this run and the next tick retries. Finish with a two-line summary: committed paths, skipped paths."
+    },
+    {
       "id": "bible-refresh",
       "name": "Game Bible refresh",
       "cron": "0 18 * * *",

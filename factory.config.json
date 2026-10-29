@@ -3,7 +3,8 @@
     "port": 4477,
     "currentPass": "Pass 6",
     "claudePath": "",
-    "triageBatch": 8
+    "triageBatch": 8,
+    "gitAuthor": { "name": "Brandon-Yip2", "email": "brandon.yip.work@gmail.com" }
   },
   "roles": [
     { "id": "game-manager", "name": "Game Manager", "agent": "ct-game-manager", "defaultModel": "sonnet", "taskType": "triage", "does": "Foreman: triages ideas, routes work, unsticks stalled ideas, checkpoint commits." },

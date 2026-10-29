@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="factory-token" content="__FACTORY_TOKEN__">
+  <title>Cat Tower Factory</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='9' y='4' width='14' height='26' rx='3' fill='%232A6F8F'/%3E%3Crect x='12' y='9' width='8' height='3' fill='%23fff'/%3E%3Crect x='12' y='15' width='8' height='3' fill='%23fff'/%3E%3Crect x='12' y='21' width='8' height='3' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <aside class="side">
+    <a class="brand" href="#home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="9" y="4" width="14" height="26" rx="3"/><rect class="w" x="12" y="9" width="8" height="3"/><rect class="w" x="12" y="15" width="8" height="3"/><rect class="w" x="12" y="21" width="8" height="3"/></svg>
+      <span>Cat Tower<br><small>Factory</small></span>
+    </a>
+    <button class="btn primary wide" id="newIdeaBtn" type="button">New idea</button>
+    <nav aria-label="Sections">
+      <a href="#home" data-nav="home">Home <span class="count attention" id="navNeeds" hidden></span></a>
+      <a href="#ideas" data-nav="ideas">Ideas</a>
+      <a href="#agents" data-nav="agents">Agents <span class="count" id="navWorking" hidden></span></a>
+      <a href="#loops" data-nav="loops">Loops</a>
+      <a href="#tools" data-nav="tools">Tools</a>
+      <a href="#activity" data-nav="activity">Activity</a>
+      <a href="#improvements" data-nav="improvements">Improvements</a>
+    </nav>
+    <div class="side-foot">
+      <div class="budget" id="budget"></div>
+      <label class="switch"><input type="checkbox" id="pauseToggle"><span>Pause the Factory</span></label>
+      <div class="conn" id="conn">Connecting…</div>
+    </div>
+  </aside>
+  <main id="main" tabindex="-1"></main>
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" hidden aria-live="polite"></aside>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script src="/app.js" type="module"></script>
+</body>
+</html>

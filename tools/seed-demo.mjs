@@ -23,7 +23,7 @@ function run(id, role, opts = {}) {
   db.prepare(`INSERT INTO runs (id, kind, role, idea_id, status, purpose, model, model_why, task_type, started_at, ended_at, last_activity_at,
       input_tokens, output_tokens, cache_write, cache_read, cost_usd, progress, progress_note, result_text, rating, redo_reason, session_id)
     VALUES (@id, @kind, @role, @idea, @status, @purpose, @model, @why, @tt, @start, @end, @start, @in, @out, @cw, @cr, @cost, @progress, @note, @result, @rating, @redo, @sid)`)
-    .run({ id, kind: opts.kind || 'factory', role, idea: opts.idea || null, status: opts.status || 'done', purpose: opts.purpose || '', model: opts.model || 'sonnet',
+    .run({ id, kind: opts.kind || 'factory', role, idea: opts.idea || null, status: opts.status || 'done', purpose: opts.purpose || '', model: opts.model === undefined ? 'sonnet' : opts.model,
       why: opts.why || 'config', tt: opts.tt || null, start: ago(opts.startMin ?? 30), end: opts.status === 'running' || opts.status === 'parked' ? null : ago(opts.endMin ?? 5),
       in: 900, out: opts.out ?? 22000, cw: opts.cw ?? 180000, cr: 900000, cost: opts.cost ?? 0.9, progress: opts.progress ?? null, note: opts.note || null,
       result: opts.result || null, rating: opts.rating || null, redo: opts.redo || null, sid: `${id}-session` });

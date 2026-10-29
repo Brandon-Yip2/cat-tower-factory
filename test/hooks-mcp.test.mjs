@@ -80,7 +80,7 @@ test('SessionEnd releases everything the session held', () => {
 test('hook CLI fails open when the DB cannot be opened', () => {
   const r = spawnSync(process.execPath, [path.join(FACTORY_DIR, 'hooks', 'hook.mjs'), 'PreToolUse'], {
     input: JSON.stringify({ session_id: 'z', tool_name: 'Bash', tool_input: { command: 'git commit' } }),
-    env: { ...process.env, FACTORY_DB: path.join(FACTORY_DIR, 'guards.json', 'no', 'db.sqlite') },
+    env: { ...process.env, FACTORY_DB: path.join(FACTORY_DIR, 'guards.json', 'no', 'db.sqlite'), FACTORY_DATA_DIR: fs.mkdtempSync(path.join(os.tmpdir(), 'factory-hook-')) },
     encoding: 'utf8',
   });
   assert.equal(r.status, 0);

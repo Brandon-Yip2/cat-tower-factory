@@ -7,7 +7,7 @@
     "gitAuthor": { "name": "Brandon-Yip2", "email": "brandon.yip.work@gmail.com" }
   },
   "roles": [
-    { "id": "game-manager", "name": "Game Manager", "agent": "ct-game-manager", "defaultModel": "sonnet", "taskType": "triage", "does": "Foreman: triages ideas, routes work, unsticks stalled ideas, checkpoint commits." },
+    { "id": "game-manager", "name": "Game Manager", "agent": "ct-game-manager", "defaultModel": "sonnet", "taskType": "triage", "builds": false, "does": "Foreman: triages ideas, routes work, unsticks stalled ideas, checkpoint commits." },
     { "id": "design-lead", "name": "Lead Designer", "agent": "ct-design-lead", "defaultModel": "sonnet", "taskType": "spec-design", "does": "Game loop, feature specs, quest structure, ROADMAP and spec tree." },
     { "id": "narrative-director", "name": "Narrative", "agent": "ct-narrative-director", "defaultModel": "haiku", "taskType": "story-text", "does": "Story, lore, characters, quest and dialogue text." },
     { "id": "engineering-lead", "name": "Engineering", "agent": "ct-engineering-lead", "defaultModel": "sonnet", "taskType": "luau-server", "does": "Server/client Luau, persistence, remotes, performance, Studio sync tooling." },
@@ -15,7 +15,7 @@
     { "id": "art-director", "name": "Art Director", "agent": "ct-art-director", "defaultModel": "opus", "taskType": "blender-mesh", "does": "Look and feel, lighting, prefabs, UI theme, Blender meshes, icons." },
     { "id": "audio-director", "name": "Audio", "agent": "ct-audio-director", "defaultModel": "sonnet", "taskType": "audio", "does": "Music, ambience, SFX, the mix and audio hooks." },
     { "id": "qa-lead", "name": "Head of QA", "agent": "ct-qa-lead", "defaultModel": "sonnet", "taskType": "qa-playtest", "does": "Play-mode tests, regressions, bug triage, release checklist." },
-    { "id": "factory-engineer", "name": "Factory Engineer", "agent": "ct-factory-engineer", "defaultModel": "sonnet", "taskType": "factory-review", "does": "Studies past runs and improves the Factory: CLAUDE.md, agent definitions, routing, loops." }
+    { "id": "factory-engineer", "name": "Factory Engineer", "agent": "ct-factory-engineer", "defaultModel": "sonnet", "taskType": "factory-review", "does": "Studies past runs and improves the Factory itself; builds ideas in the Factory area (its prompts, loops, routing, docs)." }
   ],
   "resources": [
     {

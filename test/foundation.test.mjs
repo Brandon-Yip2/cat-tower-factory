@@ -64,6 +64,15 @@ test('rework counts qa → building and shipped sets shipped_at', () => {
   assert.equal(listIdeas(db, { stageGroup: 'active' }).length, 0);
 });
 
+test('triage cannot make the foreman the builder or use the triage task type', () => {
+  const { db, cfg } = fixture();
+  const i = createIdea(db, cfg, { title: 'E2E hello', origin: 'owner', kind: 'tech' });
+  assert.throws(() => updateIdea(db, cfg, i.id, { status: 'triaged', owner_role: 'game-manager' }, 'game-manager'), /building role/);
+  assert.throws(() => updateIdea(db, cfg, i.id, { status: 'triaged', task_type: 'triage' }, 'game-manager'), /task_type/);
+  const ok = updateIdea(db, cfg, i.id, { status: 'triaged', owner_role: 'factory-engineer', task_type: 'factory-review' }, 'game-manager');
+  assert.equal(ok.owner_role, 'factory-engineer');
+});
+
 test('resource matching', () => {
   const { cfg } = fixture();
   assert.equal(matchResource(cfg, 'mcp__Roblox_Studio__execute_luau', {}), 'studio');

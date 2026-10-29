@@ -10,11 +10,12 @@ const ideaBlock = (i) => [
 ].filter(Boolean).join('\n');
 
 export function triagePrompt(ideas, cfg) {
-  const roles = cfg.roles.filter((r) => r.id !== 'factory-engineer').map((r) => `${r.id} (${r.does})`).join('\n- ');
+  const roles = cfg.roles.filter((r) => r.builds !== false).map((r) => `${r.id} (${r.does})`).join('\n- ');
   return `Triage these ${ideas.length} new idea(s). For each one call update_idea once with: status "triaged" (or "rejected"
 with a note if it is a duplicate or clearly out of scope), area (one of: ${cfg.areas.join(', ')}), kind
-(feature | bug | polish | tuning | content | tech), task_type (one of: ${Object.keys(cfg.routing).join(', ')}),
-owner_role (who builds it), priority (1 high – 3 low), needs_spec (true only for features that touch several
+(feature | bug | polish | tuning | content | tech), task_type (the kind of work building it takes, one of:
+${Object.keys(cfg.routing).filter((t) => t !== 'triage').join(', ')}), owner_role (who builds it — one of the roles
+listed below, never yourself), priority (1 high – 3 low), needs_spec (true only for features that touch several
 systems or need design decisions), parent_id (when it clearly serves an existing owner idea — check list_ideas),
 and approval_reason (one line) if it is a brand-new feature nobody asked for.
 

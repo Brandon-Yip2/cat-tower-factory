@@ -11,7 +11,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 
 function logError(err) {
   try {
-    const dir = path.join(here, '..', 'data');
+    const dir = process.env.FACTORY_DATA_DIR || path.join(here, '..', 'data');
     if (fs.existsSync(dir)) fs.appendFileSync(path.join(dir, 'hook-errors.log'), `${new Date().toISOString()} ${event} ${err?.stack || err}\n`);
   } catch { /* nothing else to do */ }
 }

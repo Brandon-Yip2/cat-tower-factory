@@ -6,7 +6,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { openDb, logActivity } from './lib/db.mjs';
 import { loadConfig } from './lib/config.mjs';
-import { DATA_DIR, SECRET_PATH, CONFIG_PATH, GUARDS_PATH } from './lib/paths.mjs';
+import { DATA_DIR, SECRET_PATH, CONFIG_PATH, GUARDS_PATH, REPO_ROOT } from './lib/paths.mjs';
 import { Runner, recoverOrphans } from './lib/runner.mjs';
 import { dispatchTick } from './lib/dispatcher.mjs';
 import { schedulerTick, initLoops } from './lib/scheduler.mjs';
@@ -84,7 +84,7 @@ api.listen(port, '127.0.0.1', () => {
     kvSet(db, 'notified_question', db.prepare('SELECT COALESCE(MAX(id), 0) m FROM questions').get().m);
   }
   logActivity(db, { role: 'factory', kind: 'status', summary: `Factory started${orphans ? ` (${orphans} orphaned run(s) marked failed)` : ''}` });
-  log(`Cat Tower Factory on http://127.0.0.1:${port} (repo ${path.resolve(DATA_DIR, '..', '..')})`);
+  log(`Cat Tower Factory on http://127.0.0.1:${port} (repo ${REPO_ROOT})`);
 
   const every = (ms, fn) => { fn(); return setInterval(fn, ms); };
   every(15_000, safe('dispatch', () => dispatchTick(db, cfg, runner)));

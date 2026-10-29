@@ -55,7 +55,7 @@ Notifications: a Windows toast appears when an agent asks you something, an idea
 | File | What | Who may edit |
 | --- | --- | --- |
 | `factory.config.json` | roles, single-user tools, loops (cron), model routing per task type, areas, current pass | you, the Factory Engineer |
-| `prompts/preamble.md`, `prompts/stages.mjs` | what every run is told; the triage/spec/build/QA prompts | you, the Factory Engineer |
+| `prompts/*.md` | what every run is told (`preamble.md`) and the triage / spec / build / QA / chat prompt templates | you, the Factory Engineer |
 | `guards.json` | safety limits: concurrency (3), daily token budget (60 M), runs per idea, rework limit, idle release, per-run $ caps, approval switches, protected paths | **you only** (agents are blocked) |
 | `../CLAUDE.md` *Learned rules* | one-line rules learned from past runs | the Factory Engineer |
 | `../.claude/agents/ct-*.md` | the team | you, the Factory Engineer (small edits) |

@@ -59,7 +59,7 @@ const ORIGIN = { owner: 'you', agent: 'an agent', loop: 'a loop', qa: 'QA' };
 // ---------- shared bits ----------
 function questionHtml(q) {
   const choices = q.choices || [];
-  const label = q.kind === 'approval' ? 'New idea to approve' : q.kind === 'failure' ? 'Run failed' : `${esc(q.roleName || q.role || 'An agent')} asks`;
+  const label = q.kind === 'approval' ? 'New idea to approve' : q.kind === 'failure' ? 'Run failed' : q.kind === 'hold' ? 'Idea on hold' : `${esc(q.roleName || q.role || 'An agent')} asks`;
   return `<div class="ask" data-q="${q.id}">
     <div class="who">${label}${q.idea_id ? `, idea <a href="#" data-idea="${q.idea_id}">#${q.idea_id}${q.idea_title ? ` ${esc(q.idea_title)}` : ''}</a>` : ''}, ${ago(q.created_at)}</div>
     <div class="q">${esc(q.text)}</div>
@@ -98,8 +98,8 @@ function workingRow(r) {
 }
 function toolRow(t) {
   const h = t.holders[0];
-  if (!h) return `<div class="tool"><span class="ic">${t.icon}</span><div><div>${esc(t.name)}</div><div class="queue">Free${t.last ? `, last used by ${esc(t.last.roleName)} ${ago(t.last.released_at)}` : ''}</div></div><span></span></div>`;
-  return `<div class="tool busy"><span class="ic">${t.icon}</span><div>
+  if (!h) return `<div class="tool"><span class="ic">${esc(t.icon)}</span><div><div>${esc(t.name)}</div><div class="queue">Free${t.last ? `, last used by ${esc(t.last.roleName)} ${ago(t.last.released_at)}` : ''}</div></div><span></span></div>`;
+  return `<div class="tool busy"><span class="ic">${esc(t.icon)}</span><div>
       <div>${esc(t.name)}: <span class="holder">${esc(h.roleName)}</span>${h.holder_kind === 'interactive' ? ' <span class="pill">your session</span>' : ''}</div>
       <div class="queue">${esc(h.reason || 'No reason given')}${h.ideaTitle ? `, for #${h.idea_id} ${esc(h.ideaTitle)}` : ''}. Held ${span(h.claimed_at)}, last used ${ago(h.last_used_at)}.</div>
       ${t.queue.length ? `<div class="queue">Waiting: ${t.queue.map((q) => esc(q.roleName)).join(', ')}</div>` : ''}

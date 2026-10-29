@@ -21,8 +21,18 @@
     "factory/guards.json",
     ".claude/settings.json",
     ".claude/settings.local.json",
+    ".mcp.json",
     "factory/hooks/",
     "factory/lib/",
-    "factory/server.mjs"
+    "factory/mcp/",
+    "factory/ui/",
+    "factory/tools/",
+    "factory/test/",
+    "factory/node_modules/",
+    "factory/server.mjs",
+    "factory/package.json",
+    "factory/install.ps1",
+    "factory/start.ps1",
+    "factory/start-hidden.vbs"
   ]
 }

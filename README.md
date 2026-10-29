@@ -8,6 +8,20 @@ You watch and steer it from one dashboard: **http://127.0.0.1:4477**.
 
 Design: [docs/superpowers/specs/2026-10-29-cattower-factory-design.md](../docs/superpowers/specs/2026-10-29-cattower-factory-design.md)
 
+## Where the code lives
+
+The Factory is developed inside the game repo, [Brandon-Yip2/cat-tower](https://github.com/Brandon-Yip2/cat-tower),
+at `factory/` — it expects that layout (the repo root is its parent folder, and the hooks are registered in the
+game's `.claude/settings.json`). [Brandon-Yip2/cat-tower-factory](https://github.com/Brandon-Yip2/cat-tower-factory)
+is a copy of this folder with its own history, kept in sync from the game repo with:
+
+```bash
+git subtree push --prefix=factory factory main
+```
+
+To use it in another project, copy this folder to `<project>/factory`, adapt `factory.config.json`, `guards.json`
+and `prompts/`, add the hooks and `.mcp.json` from cat-tower, and run `install.ps1`.
+
 ## Install (once)
 
 ```powershell

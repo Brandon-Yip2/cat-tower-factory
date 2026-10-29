@@ -117,3 +117,12 @@ test('MCP server: initialize, list tools, approval rule surfaces as a tool error
   assert.match(byId[3].result.content[0].text, /approval/);
   assert.match(byId[4].result.content[0].text, /FACTORY NOW/);
 });
+
+test('the git lock is released as soon as the commit finishes', () => {
+  const { db, cfg } = fixture();
+  const commit = { session_id: 'owner-1', tool_name: 'Bash', tool_input: { command: 'git commit -m x -- a.txt' } };
+  assert.equal(handleHook(db, cfg, 'PreToolUse', commit, {}), null);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM holds WHERE resource_id = 'git' AND released_at IS NULL").get().n, 1);
+  handleHook(db, cfg, 'PostToolUse', { ...commit, tool_response: {} }, {});
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM holds WHERE resource_id = 'git' AND released_at IS NULL").get().n, 0);
+});

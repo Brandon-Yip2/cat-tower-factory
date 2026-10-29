@@ -10,6 +10,7 @@ import { claim, release, resourceView, claimFiles } from '../lib/resources.mjs';
 import { createIdea, updateIdea, getIdea, listIdeas, KINDS, STATUSES } from '../lib/ideas.mjs';
 import { askOwner, sendMessage } from '../lib/questions.mjs';
 import { buildDigest } from '../lib/digest.mjs';
+import { openApp, appStatus } from '../lib/apps.mjs';
 
 const db = openDb();
 const cfgNow = () => loadConfig();
@@ -24,16 +25,22 @@ const TOOLS = [
   { name: 'list_ideas', description: 'List ideas in the pipeline.', inputSchema: { type: 'object', properties: { status: str(`one of ${STATUSES.join(', ')}`), area: str('area filter'), active_only: { type: 'boolean' }, limit: { type: 'number' } } } },
   { name: 'get_idea', description: 'Full history of one idea: provenance, timeline, runs, questions.', inputSchema: { type: 'object', properties: { id: { type: 'number' } }, required: ['id'] } },
   { name: 'propose_idea', description: 'Add a new idea to the inbox. Never start building it yourself. Pass parent_id when it serves an existing owner idea. Brand-new features with no parent wait for the owner.', inputSchema: { type: 'object', properties: { title: str('short title'), description: str('what and why, with repro steps for bugs'), kind: str(KINDS.join(' | ')), area: str('area'), parent_id: { type: 'number' }, task_type: str('routing task type, if known') }, required: ['title', 'description', 'kind'] } },
-  { name: 'update_idea', description: 'Move or annotate an idea (status, notes, triage fields). Statuses: inbox, triaged, spec, building, qa, shipped, on_hold, rejected.', inputSchema: { type: 'object', properties: { id: { type: 'number' }, status: str('new status'), note: str('what changed and why'), area: str(''), kind: str(''), task_type: str(''), owner_role: str('role id'), priority: { type: 'number' }, needs_spec: { type: 'boolean' }, spec_path: str(''), parent_id: { type: 'number' }, summary: str('one-paragraph summary of what shipped'), approval_reason: str('why it needs the owner') }, required: ['id'] } },
+  { name: 'update_idea', description: 'Move or annotate an idea (status, notes, triage fields). Statuses: inbox, triaged, spec, building, qa, shipped, on_hold, rejected.', inputSchema: { type: 'object', properties: { id: { type: 'number' }, status: str('new status'), note: str('what changed and why'), area: str(''), kind: str(''), task_type: str(''), owner_role: str('role id'), priority: { type: 'number' }, needs_spec: { type: 'boolean' }, spec_path: str(''), parent_id: { type: 'number' }, summary: str('one-paragraph summary of what shipped'), approval_reason: str('why it needs the owner'), depends_on: { type: 'array', items: { type: 'number' }, description: 'ids of ideas that must ship first' } }, required: ['id'] } },
   { name: 'ask_owner', description: 'Ask the owner a question that only they can answer (taste, direction, trade-offs). With blocking=true (default) you must end your turn right after; you will be resumed in this session with the answer.', inputSchema: { type: 'object', properties: { question: str('the question, with enough context to answer from a phone'), choices: { type: 'array', items: { type: 'string' }, description: '2-4 one-click answers (optional)' }, blocking: { type: 'boolean' } }, required: ['question'] } },
   { name: 'send_note', description: 'Leave a note for another role; it reaches their running session at its next tool call, or their next run.', inputSchema: { type: 'object', properties: { to_role: str('role id, e.g. qa-lead'), text: str('the note') }, required: ['to_role', 'text'] } },
   { name: 'report_progress', description: 'Update your progress bar on the dashboard.', inputSchema: { type: 'object', properties: { percent: { type: 'number' }, note: str('what you are doing now') }, required: ['percent'] } },
   { name: 'record_improvement', description: 'Factory Engineer: record a change made to the Factory itself (CLAUDE.md, agent definitions, config, prompts).', inputSchema: { type: 'object', properties: { kind: str('instructions | agent | routing | loop | prompt | other'), title: str(''), why: str(''), evidence: str('numbers from the digest'), files: { type: 'array', items: { type: 'string' } }, commit: str('commit sha') }, required: ['kind', 'title', 'why'] } },
+  { name: 'open_app', description: 'Open Roblox Studio on the Cat Tower place, or Blender (optionally a .blend under visuals/). Use this instead of asking the owner to open them. Claims the tool lock for the app first; never opens a second copy.', inputSchema: { type: 'object', properties: { app: str('studio | blender'), file: str('blender only: a .blend path under visuals/, e.g. visuals/seedlight/Seedlight.blend') }, required: ['app'] } },
+  { name: 'app_status', description: 'Whether Roblox Studio and Blender are open right now.', inputSchema: { type: 'object', properties: {} } },
   { name: 'factory_stats', description: 'Digest of the last N days of runs: tokens, durations, redo reasons, tool-gate denials, failures.', inputSchema: { type: 'object', properties: { days: { type: 'number' } } } },
 ];
 
-function call(name, a, cfg, who) {
+async function call(name, a, cfg, who) {
   switch (name) {
+    case 'open_app':
+      return openApp(db, cfg, a.app, who, { file: a.file || null });
+    case 'app_status':
+      return appStatus(cfg).map((x) => `${x.name}: ${x.running ? 'open' : 'closed'}`).join('\n');
     case 'factory_status':
       return buildSnapshot(db, cfg, who, { full: true });
     case 'who_is_using': {
@@ -105,7 +112,7 @@ function reply(id, result) { process.stdout.write(`${JSON.stringify({ jsonrpc: '
 function fail(id, code, message) { process.stdout.write(`${JSON.stringify({ jsonrpc: '2.0', id, error: { code, message } })}\n`); }
 
 const rl = readline.createInterface({ input: process.stdin });
-rl.on('line', (line) => {
+rl.on('line', async (line) => {
   if (!line.trim()) return;
   let msg;
   try { msg = JSON.parse(line); } catch { return fail(null, -32700, 'parse error'); }
@@ -121,7 +128,7 @@ rl.on('line', (line) => {
       const cfg = cfgNow();
       const who = identifyForMcp(db, cfg, process.env);
       try {
-        const text = call(params.name, params.arguments || {}, cfg, who);
+        const text = await call(params.name, params.arguments || {}, cfg, who);
         return reply(id, { content: [{ type: 'text', text: String(text) }] });
       } catch (err) {
         return reply(id, { content: [{ type: 'text', text: `Error: ${err.message}` }], isError: true });

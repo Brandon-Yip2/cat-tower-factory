@@ -17,6 +17,22 @@
     "modelRedosToBump": 2,
     "tiers": ["haiku", "sonnet", "opus"]
   },
+  "apps": {
+    "studio": {
+      "name": "Roblox Studio",
+      "resource": "studio",
+      "process": "RobloxStudioBeta.exe",
+      "studioPlace": { "placeId": 97880461952238, "universeId": 10769828301, "title": "Cat Tower" }
+    },
+    "blender": {
+      "name": "Blender",
+      "resource": "blender",
+      "process": "blender.exe",
+      "exe": "C:\\Program Files\\Blender Foundation\\Blender 5.2\\blender.exe",
+      "readyPort": 9876,
+      "filesUnder": "visuals/"
+    }
+  },
   "protectedPaths": [
     "factory/guards.json",
     ".claude/settings.json",

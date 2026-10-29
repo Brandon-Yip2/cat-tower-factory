@@ -129,3 +129,32 @@ test('stopping a run puts its idea on hold', () => {
   new Runner(db, cfg).stop('s1');
   assert.equal(db.prepare('SELECT status FROM ideas WHERE id = ?').get(i.id).status, 'on_hold');
 });
+
+test('dependencies: an idea waits until the ideas it depends on have shipped', async () => {
+  const { db, cfg } = fixture();
+  const { dispatchTick: tick } = await import('../lib/dispatcher.mjs');
+  const runner = fakeRunner(db);
+  const first = createIdea(db, cfg, { title: 'Art slot', origin: 'owner' });
+  const second = createIdea(db, cfg, { title: 'Bake', origin: 'owner', dependsOn: [first.id] });
+  assert.throws(() => createIdea(db, cfg, { title: 'x', origin: 'owner', dependsOn: [999] }), /does not exist/);
+  updateIdea(db, cfg, second.id, { status: 'triaged', owner_role: 'engineering-lead' }, 'owner');
+  updateIdea(db, cfg, first.id, { status: 'triaged', owner_role: 'art-director' }, 'owner');
+  tick(db, cfg, runner);
+  assert.deepEqual(runner.started.map((s) => s.ideaId), [first.id]);
+  updateIdea(db, cfg, first.id, { status: 'shipped' }, 'qa-lead');
+  tick(db, cfg, runner);
+  assert.deepEqual(runner.started.map((s) => s.ideaId), [first.id, second.id]);
+  assert.throws(() => updateIdea(db, cfg, second.id, { depends_on: [second.id] }, 'owner'), /itself/);
+});
+
+test('open_app only opens configured apps and only .blend files under visuals/', async () => {
+  const { db, cfg } = fixture();
+  const { launchCommand, openApp } = await import('../lib/apps.mjs');
+  await assert.rejects(openApp(db, cfg, 'notepad', { key: 'run:x', kind: 'factory', runId: 'x', role: 'art-director' }), /unknown app/);
+  const blender = { ...cfg.guards.apps.blender, exe: process.execPath };
+  assert.throws(() => launchCommand(blender, { file: '../../Windows/win.ini' }), /under visuals/);
+  assert.throws(() => launchCommand(blender, { file: 'factory/guards.json' }), /under visuals/);
+  assert.deepEqual(launchCommand(blender, {}).args, []);
+  const studio = launchCommand(cfg.guards.apps.studio, {});
+  assert.match(studio.args[0], /^roblox-studio:1\+launchmode:edit\+task:EditPlace\+placeId:97880461952238\+universeId:10769828301$/);
+});

@@ -96,9 +96,11 @@ function workingRow(r) {
       ${r.progress ? `<div class="progress"><i style="width:${r.progress}%"></i></div>` : ''}</div>
     <div class="side-info">${r.model ? `<span class="model ${modelTier(r.model)}">${esc(r.model)}</span><br>` : ''}${span(r.started_at)}</div></div>`;
 }
-function toolRow(t) {
+function toolRow(t, apps = []) {
   const h = t.holders[0];
-  if (!h) return `<div class="tool"><span class="ic">${esc(t.icon)}</span><div><div>${esc(t.name)}</div><div class="queue">Free${t.last ? `, last used by ${esc(t.last.roleName)} ${ago(t.last.released_at)}` : ''}</div></div><span></span></div>`;
+  const app = apps.find((a) => a.resource === t.id);
+  const appBtn = app ? (app.running ? '<span class="pill leaf">open</span>' : `<button class="btn small" data-open-app="${esc(app.id)}">Open</button>`) : '';
+  if (!h) return `<div class="tool"><span class="ic">${esc(t.icon)}</span><div><div>${esc(t.name)}</div><div class="queue">Free${t.last ? `, last used by ${esc(t.last.roleName)} ${ago(t.last.released_at)}` : ''}</div></div><span>${appBtn}</span></div>`;
   return `<div class="tool busy"><span class="ic">${esc(t.icon)}</span><div>
       <div>${esc(t.name)}: <span class="holder">${esc(h.roleName)}</span>${h.holder_kind === 'interactive' ? ' <span class="pill">your session</span>' : ''}</div>
       <div class="queue">${esc(h.reason || 'No reason given')}${h.ideaTitle ? `, for #${h.idea_id} ${esc(h.ideaTitle)}` : ''}. Held ${span(h.claimed_at)}, last used ${ago(h.last_used_at)}.</div>
@@ -106,6 +108,10 @@ function toolRow(t) {
     </div><button class="btn small" data-release="${t.id}" title="Take ${esc(t.name)} back from ${esc(h.roleName)}">Release</button></div>`;
 }
 function wireRelease(root) {
+  root.querySelectorAll('[data-open-app]').forEach((b) => b.addEventListener('click', () => {
+    b.disabled = true;
+    act(() => api(`/api/apps/${b.dataset.openApp}/open`, {}), (r) => r.message);
+  }));
   root.querySelectorAll('[data-release]').forEach((b) => b.addEventListener('click', () => {
     if (!confirm('Force-release this tool? The agent using it will be told it is no longer theirs.')) return;
     act(() => api(`/api/tools/${b.dataset.release}/release`, {}), 'Released');
@@ -143,7 +149,7 @@ pages.home = {
     wireQuestions($('#needsList'));
     $('#working').innerHTML = h.working.length ? h.working.map(workingRow).join('') : '<div class="empty">No agents running. Add an idea or start a loop.</div>';
     wireIdeaLinks($('#working'));
-    $('#tools').innerHTML = h.tools.resources.map(toolRow).join('');
+    $('#tools').innerHTML = h.tools.resources.map((t) => toolRow(t, h.tools.apps)).join('');
     wireRelease($('#tools'));
     const p = h.pipeline;
     const floors = [
@@ -210,7 +216,7 @@ pages.ideas = {
     }
     const row = (i) => `<div class="row click" data-idea="${i.id}">
       <div class="main"><div class="title">#${i.id} ${esc(i.title)}</div>
-      <div class="sub">From ${esc(i.origin === 'owner' ? 'you' : i.originName || ORIGIN[i.origin])}${i.area ? `, ${esc(i.area)}` : ''}${i.owner_role ? `, built by ${esc(i.ownerName)}` : ''}${i.rework_count ? `, sent back ${i.rework_count}×` : ''}</div></div>
+      <div class="sub">From ${esc(i.origin === 'owner' ? 'you' : i.originName || ORIGIN[i.origin])}${i.area ? `, ${esc(i.area)}` : ''}${i.owner_role ? `, built by ${esc(i.ownerName)}` : ''}${i.rework_count ? `, sent back ${i.rework_count}×` : ''}${i.depends_on ? `, after ${JSON.parse(i.depends_on).map((d) => `#${d}`).join(', ')}` : ''}</div></div>
       <div class="side-info">${i.status === 'rejected' ? '<span class="pill">Rejected</span>' : i.rating === 'redo' ? '<span class="pill attention">Redo</span>' : i.rating === 'good' ? '<span class="pill leaf">Good</span>' : ''}<br>${ago(i.shipped_at || i.updated_at)}</div></div>`;
     if (f.tab !== 'done') { list.innerHTML = `<div class="rows">${data.ideas.map(row).join('')}</div>`; wireIdeaLinks(list); return; }
     const weeks = new Map();
@@ -327,7 +333,7 @@ pages.tools = {
   },
   async refresh() {
     const t = await api('/api/tools');
-    $('#toolList').innerHTML = t.resources.map(toolRow).join('');
+    $('#toolList').innerHTML = t.resources.map((x) => toolRow(x, t.apps)).join('');
     wireRelease($('#toolList'));
     $('#files').innerHTML = t.files.length ? t.files.map((f) => `<div class="row"><div class="main"><div>${esc(f.path)}</div><div class="sub">${esc(f.roleName)}${f.reason ? `, ${esc(f.reason)}` : ''}</div></div><div class="side-info">${ago(f.claimed_at)}</div></div>`).join('')
       : '<div class="empty">No agent has claimed files right now.</div>';
@@ -413,6 +419,7 @@ async function renderDrawer(first = false) {
     el.innerHTML = `${close}<h1>#${i.id} ${esc(i.title)}</h1>
       <p><span class="pill ${i.status === 'needs_approval' ? 'attention' : i.status === 'shipped' ? 'leaf' : ''}">${esc(STAGE_NAME[i.status] || i.status)}</span>
         <span class="muted">From ${esc(i.origin === 'owner' ? 'you' : i.origin_role || ORIGIN[i.origin])}${i.parent ? `, serving <a href="#" data-idea="${i.parent.id}">#${i.parent.id} ${esc(i.parent.title)}</a>` : ''}${i.owner_role ? `, built by ${esc(i.ownerName)}` : ''}${i.task_type ? `, ${esc(i.task_type)}` : ''}</span></p>
+      ${i.deps.length ? `<p class="small">Starts after ${i.deps.map((d) => `<a href="#" data-idea="${d.id}">#${d.id} ${esc(d.title)}</a> (${esc(STAGE_NAME[d.status] || d.status)})`).join(', ')}.</p>` : ''}
       ${i.description ? `<p style="white-space:pre-wrap">${esc(i.description)}</p>` : ''}
       ${i.summary ? `<section><h3>What shipped</h3><p style="white-space:pre-wrap">${esc(i.summary)}</p></section>` : ''}
       ${i.spec_path ? `<p class="small">Spec: ${esc(i.spec_path)}</p>` : ''}

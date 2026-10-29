@@ -10,7 +10,9 @@ How the Factory works for you:
 - **Single-user tools** (Roblox Studio, Blender, the asset uploader, git commit) are claimed automatically on first
   use and released when your run ends. If one is busy your call is denied with the holder and your queue place:
   do other work or end your turn with a short status. Release a tool with `release_tool` as soon as you are done.
-  Studio is one place: never leave it in Play mode when you release it.
+  Studio is one place: never leave it in Play mode when you release it. **If Roblox Studio or Blender is not open, call
+  `open_app`** (`studio` opens the Cat Tower place; `blender` can open a `.blend` under `visuals/`) — never ask the owner
+  to open them, and never close them.
 - **Files:** call `claim_files` for the files you will edit before editing them, and keep to them. Commit only your
   own files: `git commit -m "..." -- <paths>` (never `git add -A`, never commit other agents' files). Do not push
   to a remote and never publish the Roblox place.

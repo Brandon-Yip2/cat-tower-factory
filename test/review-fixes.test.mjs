@@ -12,7 +12,13 @@ import { dispatchTick } from '../lib/dispatcher.mjs';
 import { Runner } from '../lib/runner.mjs';
 import { openDb } from '../lib/db.mjs';
 import { FACTORY_DIR } from '../lib/paths.mjs';
-import { fixture } from './helpers.mjs';
+import { fixture as baseFixture } from './helpers.mjs';
+
+function fixture() {
+  const f = baseFixture();
+  f.cfg.guards.planning = { enabled: false }; // idle planning is covered in backlog.test.mjs
+  return f;
+}
 
 test('needs_owner is sticky: relabelling the kind or pointing at an agent idea does not approve it', () => {
   const { db, cfg } = fixture();

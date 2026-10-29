@@ -69,6 +69,26 @@ function questionHtml(q) {
       ${q.kind === 'question' ? `<form class="reply"><input type="text" placeholder="Or type an answer" aria-label="Answer"><button class="btn small">Send</button></form>` : ''}
     </div></div>`;
 }
+function proposalHtml(p) {
+  return `<div class="proposal" data-proposal="${p.id}">
+    <div class="who">Pass proposed by ${esc(p.createdByName || p.created_by)}, ${ago(p.created_at)}</div>
+    <h3>${esc(p.title)}</h3>
+    <p class="q">${esc(p.why)}</p>
+    <ol class="tasks">${p.tasks.map((t) => `<li><b>${esc(t.roleName)}</b> ${esc(t.title || '')}${t.after?.length ? ` <span class="muted small">after task ${t.after.join(', ')}</span>` : ''}${t.description ? `<div class="muted small">${esc(t.description.slice(0, 220))}${t.description.length > 220 ? '…' : ''}</div>` : ''}</li>`).join('')}</ol>
+    <textarea rows="2" placeholder="Optional: add changes or notes. They go to every task and to the Game Manager."></textarea>
+    <div class="acts"><button class="btn primary" data-pass="approve">Approve</button><button class="btn" data-pass="deny">Deny</button></div>
+  </div>`;
+}
+function wireProposals(root) {
+  root.querySelectorAll('[data-proposal]').forEach((card) => {
+    const id = card.dataset.proposal;
+    const note = card.querySelector('textarea');
+    const approve = card.querySelector('[data-pass="approve"]');
+    note.addEventListener('input', () => { approve.textContent = note.value.trim() ? 'Approve with changes' : 'Approve'; });
+    approve.addEventListener('click', () => act(() => api(`/api/proposals/${id}/approve`, { note: note.value }), (r) => `Approved: ${r.approved.length} tasks added to the backlog`));
+    card.querySelector('[data-pass="deny"]').addEventListener('click', () => act(() => api(`/api/proposals/${id}/deny`, { reason: note.value }), 'Pass denied; the Game Manager is told why'));
+  });
+}
 function wireQuestions(root) {
   root.querySelectorAll('[data-answer]').forEach((b) => b.addEventListener('click', () => {
     const id = b.closest('[data-q]').dataset.q;
@@ -141,12 +161,13 @@ pages.home = {
   },
   async refresh(home) {
     const h = home || await api('/api/home');
-    const n = h.needsYou.length;
+    const n = h.needsYou.length + h.proposals.length;
     $('#homeLead').textContent = h.totals.paused ? 'The Factory is paused. Nothing new starts until you resume it.'
       : n ? `${n} thing${n > 1 ? 's' : ''} waiting on you. Everything else is moving on its own.`
         : h.working.length ? 'Nothing needs you. The team is working.' : 'Nothing needs you, and nobody is working right now.';
     $('#needs').hidden = !n;
-    $('#needsList').innerHTML = h.needsYou.map(questionHtml).join('');
+    $('#needsList').innerHTML = h.proposals.map(proposalHtml).join('') + h.needsYou.map(questionHtml).join('');
+    wireProposals($('#needsList'));
     wireQuestions($('#needsList'));
     $('#working').innerHTML = h.working.length ? h.working.map(workingRow).join('') : '<div class="empty">No agents running. Add an idea or start a loop.</div>';
     wireIdeaLinks($('#working'));
@@ -163,6 +184,38 @@ pages.home = {
     $('#coming').innerHTML = h.comingUp.length ? h.comingUp.map((l) => `<div class="row"><div class="main"><div class="title">${esc(l.name)}</div>
       <div class="sub">${esc(l.roleName)}, ${esc(l.schedule)}</div></div><div class="side-info">${when(l.next)}</div></div>`).join('')
       : '<div class="empty">No loops are switched on.</div>';
+  },
+};
+
+pages.backlog = {
+  mount() {
+    main.innerHTML = `<div class="page-head"><div><h1>Backlog</h1><p>What every agent is doing and will do next. The Game Manager plans a pass when agents run low on work; you approve it here or on Home. Agents read this same list.</p></div></div>
+      <div class="stack"><section class="panel needs" id="blProposals" hidden><h2>Passes waiting for you</h2><div id="blProposalList"></div></section>
+      <div class="roles" id="blRoles"></div>
+      <section class="panel" id="blSuggest" hidden><h2>Suggestions from agents</h2><p class="muted small">New features agents came up with. The Game Manager bundles good ones into its next pass; you can also approve one directly from its page.</p><div class="rows" id="blSuggestList"></div></section></div>`;
+  },
+  async refresh() {
+    const b = await api('/api/backlog');
+    $('#blProposals').hidden = !b.proposals.length;
+    $('#blProposalList').innerHTML = b.proposals.map(proposalHtml).join('');
+    wireProposals($('#blProposalList'));
+    const item = (i) => `<div class="row"><div class="main click" data-idea="${i.id}"><div>#${i.id} ${esc(i.title)}</div>
+      <div class="sub">${esc(STAGE_NAME[i.status] || i.status)}${i.waiting?.length ? `, waiting for ${i.waiting.map((d) => '#' + d).join(', ')}` : ''}${i.pass_label ? `, ${esc(i.pass_label)}` : ''}</div></div>
+      <div class="acts"><button class="btn small" data-move="up" data-id="${i.id}" title="Earlier" aria-label="Move earlier">↑</button><button class="btn small" data-move="down" data-id="${i.id}" title="Later" aria-label="Move later">↓</button><button class="btn small danger" data-drop="${i.id}" title="Remove from the backlog" aria-label="Remove">✕</button></div></div>`;
+    $('#blRoles').innerHTML = b.roles.map((r) => `<section class="panel role">
+      <h2><span><span class="dot ${r.working.length ? 'working' : r.next.length ? '' : 'queued'}"></span> ${esc(r.name)}</span><span class="muted small">${r.working.length ? `${r.working.length} working` : r.next.length ? 'work ready' : 'nothing queued'}</span></h2>
+      ${r.working.map((w) => `<div class="row click" data-run="${w.id}"><div class="main"><div class="title">Now: ${esc(w.idea_title || w.purpose)}</div><div class="sub">${esc(w.progress_note || '')} ${span(w.started_at)}</div></div></div>`).join('')}
+      ${r.next.length ? `<h3>Up next</h3><div class="rows">${r.next.map(item).join('')}</div>` : ''}
+      ${r.waiting.length ? `<h3>Waiting</h3><div class="rows">${r.waiting.map(item).join('')}</div>` : ''}
+      ${!r.working.length && !r.next.length && !r.waiting.length ? '<div class="empty">Nothing queued. The Game Manager plans more when agents run low.</div>' : ''}
+    </section>`).join('');
+    const roles = $('#blRoles');
+    wireIdeaLinks(roles);
+    roles.querySelectorAll('[data-move]').forEach((x) => x.addEventListener('click', () => act(() => api(`/api/ideas/${x.dataset.id}/move`, { dir: x.dataset.move }))));
+    roles.querySelectorAll('[data-drop]').forEach((x) => x.addEventListener('click', () => { if (confirm('Remove this task from the backlog?')) act(() => api(`/api/ideas/${x.dataset.drop}/status`, { status: 'rejected', note: 'removed from the backlog by the owner' }), 'Removed'); }));
+    $('#blSuggest').hidden = !b.suggestions.length;
+    $('#blSuggestList').innerHTML = b.suggestions.map((i) => `<div class="row click" data-idea="${i.id}"><div class="main"><div>#${i.id} ${esc(i.title)}</div><div class="sub">From ${esc(i.originName || 'an agent')}, ${ago(i.created_at)}</div></div></div>`).join('');
+    wireIdeaLinks($('#blSuggestList'));
   },
 };
 
@@ -484,7 +537,7 @@ function route() {
   refresh();
 }
 async function refreshSidebar(home) {
-  const n = home.needsYou.length;
+  const n = home.needsYou.length + home.proposals.length;
   const needs = $('#navNeeds'); needs.hidden = !n; needs.textContent = n;
   const w = home.working.filter((r) => r.kind === 'factory').length;
   const working = $('#navWorking'); working.hidden = !w; working.textContent = w;

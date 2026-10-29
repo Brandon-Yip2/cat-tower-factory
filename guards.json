@@ -1,13 +1,26 @@
 {
   "_comment": "Safety limits. Agents (including the Factory Engineer) cannot edit this file; only the owner can.",
-  "maxConcurrentRuns": 3,
-  "dailyTokenBudget": 60000000,
+  "maxConcurrentRuns": 6,
+  "perRoleMax": {
+    "default": 2,
+    "engineering-lead": 3,
+    "game-manager": 1
+  },
+  "dailyTokenBudget": 150000000,
+  "planning": {
+    "enabled": true,
+    "cooldownMinutes": 20
+  },
   "maxRunsPerIdea": 10,
   "maxRework": 3,
   "idleReleaseMinutes": 10,
   "studioIdleMinutes": 30,
   "catchUpHours": 12,
-  "runCapUsd": { "haiku": 8, "sonnet": 8, "opus": 20 },
+  "runCapUsd": {
+    "haiku": 8,
+    "sonnet": 8,
+    "opus": 20
+  },
   "approval": {
     "ownerIdeasAutoApproved": true,
     "agentFeaturesWithoutParentNeedOwner": true
@@ -15,14 +28,22 @@
   "learning": {
     "window": 5,
     "modelRedosToBump": 2,
-    "tiers": ["haiku", "sonnet", "opus"]
+    "tiers": [
+      "haiku",
+      "sonnet",
+      "opus"
+    ]
   },
   "apps": {
     "studio": {
       "name": "Roblox Studio",
       "resource": "studio",
       "process": "RobloxStudioBeta.exe",
-      "studioPlace": { "placeId": 97880461952238, "universeId": 10769828301, "title": "Cat Tower" }
+      "studioPlace": {
+        "placeId": 97880461952238,
+        "universeId": 10769828301,
+        "title": "Cat Tower"
+      }
     },
     "blender": {
       "name": "Blender",

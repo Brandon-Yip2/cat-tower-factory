@@ -4,7 +4,16 @@ import { createIdea, updateIdea } from '../lib/ideas.mjs';
 import { dispatchTick, budgetState } from '../lib/dispatcher.mjs';
 import { schedulerTick, initLoops, setEnabled, loopView } from '../lib/scheduler.mjs';
 import { kvSet } from '../lib/db.mjs';
-import { fixture } from './helpers.mjs';
+import { fixture as baseFixture } from './helpers.mjs';
+
+// These tests pin the dispatcher's ordering rules with 3 slots and no idle planning
+// (planning and the 6-agent default are covered in backlog.test.mjs).
+function fixture() {
+  const f = baseFixture();
+  f.cfg.guards.maxConcurrentRuns = 3;
+  f.cfg.guards.planning = { enabled: false };
+  return f;
+}
 
 // A runner double that records starts and lets tests finish runs by hand.
 function fakeRunner(db) {

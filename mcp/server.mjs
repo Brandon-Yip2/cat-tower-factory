@@ -11,6 +11,8 @@ import { createIdea, updateIdea, getIdea, listIdeas, KINDS, STATUSES } from '../
 import { askOwner, sendMessage } from '../lib/questions.mjs';
 import { buildDigest } from '../lib/digest.mjs';
 import { openApp, appStatus } from '../lib/apps.mjs';
+import { proposePass, revisePass, pendingProposals } from '../lib/proposals.mjs';
+import { readyWork } from '../lib/dispatcher.mjs';
 
 const db = openDb();
 const cfgNow = () => loadConfig();
@@ -32,6 +34,9 @@ const TOOLS = [
   { name: 'record_improvement', description: 'Factory Engineer: record a change made to the Factory itself (CLAUDE.md, agent definitions, config, prompts).', inputSchema: { type: 'object', properties: { kind: str('instructions | agent | routing | loop | prompt | other'), title: str(''), why: str(''), evidence: str('numbers from the digest'), files: { type: 'array', items: { type: 'string' } }, commit: str('commit sha') }, required: ['kind', 'title', 'why'] } },
   { name: 'open_app', description: 'Open Roblox Studio on the Cat Tower place, or Blender (optionally a .blend under visuals/). Use this instead of asking the owner to open them. Claims the tool lock for the app first; never opens a second copy.', inputSchema: { type: 'object', properties: { app: str('studio | blender'), file: str('blender only: a .blend path under visuals/, e.g. visuals/seedlight/Seedlight.blend') }, required: ['app'] } },
   { name: 'app_status', description: 'Whether Roblox Studio and Blender are open right now.', inputSchema: { type: 'object', properties: {} } },
+  { name: 'propose_pass', description: 'Game Manager: send the owner a pass (a bundle of tasks for several roles). The owner approves it with one click (maybe with additions) or denies it; approved tasks go to the backlog.', inputSchema: { type: 'object', properties: { title: str('short pass name'), why: str('2-3 sentences for the owner'), tasks: { type: 'array', description: 'the tasks, in order', items: { type: 'object', properties: { title: str('short, specific'), description: str('what to do, done criteria, how QA checks it'), owner_role: str('role id that builds it'), task_type: str('routing task type'), area: str('area'), kind: str('feature | bug | polish | tuning | content | tech'), priority: { type: 'number' }, after: { type: 'array', items: { type: 'number' }, description: 'task numbers in this pass that must ship first' }, after_ideas: { type: 'array', items: { type: 'number' }, description: 'existing idea ids that must ship first' }, idea_id: { type: 'number', description: 'include an existing suggested idea instead of a new task' } }, required: ['owner_role'] } } }, required: ['title', 'why', 'tasks'] } },
+  { name: 'revise_pass', description: 'Improve a pass that is still waiting for the owner.', inputSchema: { type: 'object', properties: { id: { type: 'number' }, title: str(''), why: str(''), tasks: { type: 'array', description: 'the tasks, in order', items: { type: 'object', properties: { title: str('short, specific'), description: str('what to do, done criteria, how QA checks it'), owner_role: str('role id that builds it'), task_type: str('routing task type'), area: str('area'), kind: str('feature | bug | polish | tuning | content | tech'), priority: { type: 'number' }, after: { type: 'array', items: { type: 'number' }, description: 'task numbers in this pass that must ship first' }, after_ideas: { type: 'array', items: { type: 'number' }, description: 'existing idea ids that must ship first' }, idea_id: { type: 'number', description: 'include an existing suggested idea instead of a new task' } }, required: ['owner_role'] } } }, required: ['id'] } },
+  { name: 'list_backlog', description: 'The shared backlog: tasks ready to start per role, tasks staged or waiting for others, and passes waiting for the owner. Use it to see what other agents will do next.', inputSchema: { type: 'object', properties: { role: str('only this role (optional)') } } },
   { name: 'factory_stats', description: 'Digest of the last N days of runs: tokens, durations, redo reasons, tool-gate denials, failures.', inputSchema: { type: 'object', properties: { days: { type: 'number' } } } },
 ];
 
@@ -42,6 +47,24 @@ async function call(name, a, cfg, who) {
       return openApp(db, cfg, a.app, who, { file: a.file || null });
     case 'app_status':
       return appStatus(cfg).map((x) => `${x.name}: ${x.running ? 'open' : 'closed'}`).join('\n');
+    case 'propose_pass':
+      return `Pass #${proposePass(db, cfg, who, a)} is waiting for the owner. End your turn now.`;
+    case 'revise_pass':
+      return `Pass #${revisePass(db, cfg, who, a.id, a)} updated.`;
+    case 'list_backlog': {
+      const rows = listIdeas(db, { stageGroup: 'active' }).filter((i) => ['approved', 'owner_approved'].includes(i.approval) && (!a.role || i.owner_role === a.role));
+      const ready = new Set(readyWork(db, { isActive: () => false }).map((i) => i.id));
+      const fmt = (i) => `#${i.id} [${i.status}] ${i.title}${i.owner_role ? ` — ${i.owner_role}` : ''}${i.depends_on ? ` (after ${JSON.parse(i.depends_on).map((d) => '#' + d).join(', ')})` : ''}`;
+      const out = [];
+      const byRole = new Map();
+      for (const i of rows) { const k = i.owner_role || 'unassigned'; if (!byRole.has(k)) byRole.set(k, []); byRole.get(k).push(i); }
+      for (const [role, list] of byRole) {
+        out.push(`${role}:\n${list.map((i) => `  ${ready.has(i.id) ? '' : '(waiting) '}${fmt(i)}`).join('\n')}`);
+      }
+      const pending = pendingProposals(db, cfg);
+      if (pending.length) out.push(`Passes waiting for the owner: ${pending.map((p) => `#${p.id} "${p.title}" (${p.tasks.length} tasks)`).join('; ')}`);
+      return out.join('\n') || 'The backlog is empty.';
+    }
     case 'factory_status':
       return buildSnapshot(db, cfg, who, { full: true });
     case 'who_is_using': {

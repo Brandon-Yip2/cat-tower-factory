@@ -42,13 +42,12 @@ test('approval rule: owner, agent bug, agent feature with and without parent', (
   const triaged = updateIdea(db, cfg, fresh.id, { status: 'triaged', owner_role: 'design-lead' }, 'game-manager');
   assert.equal(triaged.status, 'needs_approval');
   assert.throws(() => updateIdea(db, cfg, fresh.id, { status: 'building' }, 'engineering-lead'), ApprovalError);
-  const q = db.prepare("SELECT * FROM questions WHERE idea_id = ? AND kind = 'approval'").get(fresh.id);
-  assert.ok(q && q.status === 'open');
+  // No per-idea question: the Game Manager bundles suggestions into a pass for the owner.
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM questions WHERE idea_id = ?").get(fresh.id).n, 0);
 
   const ok = decideApproval(db, cfg, fresh.id, true);
   assert.equal(ok.status, 'triaged');
   assert.equal(updateIdea(db, cfg, fresh.id, { status: 'building' }, 'engineering-lead').status, 'building');
-  assert.equal(db.prepare('SELECT status FROM questions WHERE id = ?').get(q.id).status, 'answered');
 });
 
 test('rework counts qa → building and shipped sets shipped_at', () => {

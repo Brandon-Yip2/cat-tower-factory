@@ -57,6 +57,10 @@ const notifyTick = safe('notify', () => {
     notify(title, q.text, `http://127.0.0.1:${port}/#home`);
   }
   if (fresh.length) kvSet(db, 'notified_question', fresh.at(-1).id);
+  const seenPass = Number(kvGet(db, 'notified_proposal', '0'));
+  const passes = db.prepare("SELECT * FROM proposals WHERE status = 'pending' AND id > ? ORDER BY id").all(seenPass);
+  for (const p of passes) notify('New pass to approve', `${p.title}: ${JSON.parse(p.tasks).length} tasks`, `http://127.0.0.1:${port}/#backlog`);
+  if (passes.length) kvSet(db, 'notified_proposal', passes.at(-1).id);
 });
 
 const reloadTick = safe('config reload', () => {

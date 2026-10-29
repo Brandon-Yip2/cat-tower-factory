@@ -27,7 +27,8 @@ test('mutations need the token and a same-origin Origin', async () => {
     const ok = await call('POST', '/api/ideas', { title: 'Daily fish bonus', area: 'Economy' }, { 'x-factory-token': 'tok', origin: base });
     assert.equal(ok.status, 200);
     const home = await (await call('GET', '/api/home')).json();
-    assert.equal(home.pipeline.inbox, 1);
+    assert.equal(home.ideas.length, 1, "the dashboard creates a high-level idea");
+    assert.equal(home.ideas[0].status, "active");
     assert.equal(home.tools.resources.length, 4);
     const page = await (await fetch(`${base}/`)).text();
     assert.match(page, /tok/);

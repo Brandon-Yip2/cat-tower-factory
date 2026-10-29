@@ -60,7 +60,7 @@ test('approving with additions creates ordered, owner-approved backlog ideas and
   assert.ok(rows[0].rank < rows[1].rank && rows[1].rank < rows[2].rank);
   assert.equal(rows[3].id, suggestion.id, 'the suggested idea is approved, not duplicated');
   const msg = db.prepare("SELECT * FROM messages WHERE to_role = 'game-manager' ORDER BY id DESC").get();
-  assert.match(msg.text, /approved pass "Charms polish" with these additions/);
+  assert.match(msg.text, /approved the idea "Charms polish" \(#[0-9]+\) with these additions/);
   assert.equal(pendingProposals(db, cfg).length, 0);
 });
 
@@ -89,12 +89,12 @@ test('six agents at once, but no more than the per-role cap', () => {
   assert.equal(byRole['audio-director'], 2);
 });
 
-test('idle agents with an empty backlog make the Game Manager plan a pass, once', () => {
+test('idle agents with an empty backlog make the Game Manager plan, once per cooldown', () => {
   const { db, cfg } = fixture();
   const runner = fakeRunner(db);
   dispatchTick(db, cfg, runner);
   assert.equal(runner.started.length, 1);
-  assert.equal(runner.started[0].purpose, 'Plan the next pass');
+  assert.equal(runner.started[0].purpose, 'Plan the next work');
   assert.match(runner.started[0].prompt, /propose_pass/);
   dispatchTick(db, cfg, runner);
   assert.equal(runner.started.length, 1, 'no second planner while one is running');
@@ -103,5 +103,6 @@ test('idle agents with an empty backlog make the Game Manager plan a pass, once'
   assert.equal(runner.started.length, 1, 'cooldown after a planning run');
   proposePass(db, cfg, gm, { title: 'p', why: 'w', tasks });
   dispatchTick(db, cfg, runner, Date.now() + 3600_000);
-  assert.equal(runner.started.length, 1, 'no planning while a pass waits for the owner');
+  assert.equal(runner.started.length, 2, 'idle agents still get tasks under existing ideas while a new idea waits');
+  assert.match(runner.started[1].prompt, /already waiting for the owner, so do not propose another/);
 });

@@ -253,3 +253,34 @@ table.t { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 .proposal ol.tasks { margin: 8px 0 10px; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; max-width: 90ch; }
 .proposal textarea { min-height: 52px; max-width: 90ch; }
 .proposal .acts { display: flex; gap: 8px; margin-top: 8px; }
+
+/* High-level idea cards */
+.idea-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+.idea-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.idea-card:hover { border-color: var(--accent); }
+.idea-card h3 { margin: 0; font-size: 1.02rem; }
+.idea-card p { margin: 0; font-size: 0.92rem; }
+.idea-card .progress { max-width: none; margin-top: 4px; }
+.idea-card .sub { color: var(--muted); font-size: 0.86rem; }
+.idea-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+#homeIdeas .idea-card { padding: 10px 12px; }
+details.panel summary { cursor: pointer; }
+
+/* Game Bible */
+.bible { max-width: 860px; line-height: 1.62; padding: 26px 34px; }
+.bible h2 { font-size: 1.55rem; margin: 0 0 14px; display: block; }
+.bible h3 { font-size: 1.15rem; margin: 26px 0 8px; }
+.bible h4, .bible h5 { font-size: 1rem; margin: 18px 0 6px; }
+.bible p, .bible li { max-width: 72ch; }
+.bible ul, .bible ol { padding-left: 22px; }
+.bible li { margin: 4px 0; }
+.bible blockquote { margin: 14px 0; padding: 10px 16px; border-left: 4px solid var(--accent); background: var(--sunk); border-radius: 0 8px 8px 0; }
+.bible blockquote p { margin: 4px 0; }
+.bible code { font-size: 0.88em; background: var(--sunk); padding: 1px 5px; border-radius: 4px; }
+.bible .md-table { overflow-x: auto; margin: 12px 0; }
+.bible table { border-collapse: collapse; font-size: 0.9rem; }
+.bible th, .bible td { border-bottom: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+.bible th { color: var(--muted); font-weight: 700; }
+.bible hr { border: 0; border-top: 1px solid var(--line); margin: 22px 0; }
+.bible-updated { margin-top: 24px; }
+@media (max-width: 900px) { .bible { padding: 18px; } }

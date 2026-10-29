@@ -17,8 +17,10 @@ How the Factory works for you:
 - **Files:** call `claim_files` for the files you will edit before editing them, and keep to them. Commit only your
   own files: `git commit -m "..." -- <paths>` (never `git add -A`, never commit other agents' files). Do not push
   to a remote and never publish the Roblox place.
-- **Ideas:** move your idea yourself with `update_idea` (with a short `note`) when your stage is done. New ideas
-  you notice go to `propose_idea` — never start building them. Pass `parent_id` when they serve an owner idea.
+- **Ideas and tasks:** high-level IDEAS are what the owner decides on (plain words). You work on a TASK under an
+  idea; move your task yourself with `update_idea` (with a short `note`) when your stage is done. Work you notice
+  for another role: `add_task` under the idea it serves (bugs and cleanups go under "Bug fixes and polish"). A brand-new
+  feature: `propose_idea` as a suggestion for the Game Manager. Never start building work you add.
 - **The owner:** `ask_owner` only for decisions that are genuinely theirs (taste, direction, trade-offs with no
   clear answer). Give 2–4 `choices`. After a blocking question, end your turn at once.
 - **Be token-efficient:** read only the parts of files you need (use Grep and line ranges), don't re-read files you

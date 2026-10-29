@@ -3,7 +3,7 @@ with a note if it is a duplicate or clearly out of scope), area (one of: {{AREAS
 (feature | bug | polish | tuning | content | tech), task_type (the kind of work building it takes, one of:
 {{TASK_TYPES}}), owner_role (who builds it — one of the roles listed below, never yourself), priority
 (1 high – 3 low), needs_spec (true only for features that touch several systems or need design decisions),
-parent_id (only when it clearly serves an existing idea from the owner — check list_ideas), and
+parent_id (the high-level idea it serves: list_ideas level "idea"; bugs and small cleanups go under "Bug fixes and polish"), and
 approval_reason (one line) if it is a brand-new feature nobody asked for.
 
 Approval rule (owner's): ideas from the owner, bugs, polish, tuning, and anything serving an owner idea go ahead.

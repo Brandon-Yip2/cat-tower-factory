@@ -16,6 +16,7 @@ import { tailBus } from './lib/bus.mjs';
 import { notify } from './lib/notify.mjs';
 import { createApi } from './lib/api.mjs';
 import { kvGet, kvSet } from './lib/db.mjs';
+import { ensureStandingIdea } from './lib/ideas.mjs';
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 const LOG = path.join(DATA_DIR, 'factory.log');
@@ -84,6 +85,8 @@ api.listen(port, '127.0.0.1', () => {
   if (DEMO) { log(`Cat Tower Factory DEMO on http://127.0.0.1:${port}`); return; }
   const orphans = recoverOrphans(db);
   initLoops(db, cfg);
+  ensureStandingIdea(db, cfg, 'fixes');
+  ensureStandingIdea(db, cfg, 'bible');
   if (kvGet(db, 'notified_question', null) === null) {
     kvSet(db, 'notified_question', db.prepare('SELECT COALESCE(MAX(id), 0) m FROM questions').get().m);
   }

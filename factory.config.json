@@ -4,67 +4,258 @@
     "currentPass": "Pass 6",
     "claudePath": "",
     "triageBatch": 8,
-    "gitAuthor": { "name": "Brandon-Yip2", "email": "brandon.yip.work@gmail.com" }
+    "gitAuthor": {
+      "name": "Brandon-Yip2",
+      "email": "brandon.yip.work@gmail.com"
+    }
   },
   "roles": [
-    { "id": "game-manager", "name": "Game Manager", "agent": "ct-game-manager", "defaultModel": "sonnet", "taskType": "triage", "builds": false, "does": "Foreman: triages ideas, routes work, unsticks stalled ideas, checkpoint commits." },
-    { "id": "design-lead", "name": "Lead Designer", "agent": "ct-design-lead", "defaultModel": "sonnet", "taskType": "spec-design", "does": "Game loop, feature specs, quest structure, ROADMAP and spec tree." },
-    { "id": "narrative-director", "name": "Narrative", "agent": "ct-narrative-director", "defaultModel": "haiku", "taskType": "story-text", "does": "Story, lore, characters, quest and dialogue text." },
-    { "id": "engineering-lead", "name": "Engineering", "agent": "ct-engineering-lead", "defaultModel": "sonnet", "taskType": "luau-server", "does": "Server/client Luau, persistence, remotes, performance, Studio sync tooling." },
-    { "id": "balance-lead", "name": "Balance", "agent": "ct-balance-lead", "defaultModel": "sonnet", "taskType": "balance-config", "does": "Economy, progression, drop rates and combat tuning in Config.luau." },
-    { "id": "art-director", "name": "Art Director", "agent": "ct-art-director", "defaultModel": "opus", "taskType": "blender-mesh", "does": "Look and feel, lighting, prefabs, UI theme, Blender meshes, icons." },
-    { "id": "audio-director", "name": "Audio", "agent": "ct-audio-director", "defaultModel": "sonnet", "taskType": "audio", "does": "Music, ambience, SFX, the mix and audio hooks." },
-    { "id": "qa-lead", "name": "Head of QA", "agent": "ct-qa-lead", "defaultModel": "sonnet", "taskType": "qa-playtest", "does": "Play-mode tests, regressions, bug triage, release checklist." },
-    { "id": "factory-engineer", "name": "Factory Engineer", "agent": "ct-factory-engineer", "defaultModel": "sonnet", "taskType": "factory-review", "does": "Studies past runs and improves the Factory itself; builds ideas in the Factory area (its prompts, loops, routing, docs)." }
+    {
+      "id": "game-manager",
+      "name": "Game Manager",
+      "agent": "ct-game-manager",
+      "defaultModel": "sonnet",
+      "taskType": "triage",
+      "builds": false,
+      "does": "Foreman: triages ideas, routes work, unsticks stalled ideas, checkpoint commits."
+    },
+    {
+      "id": "design-lead",
+      "name": "Lead Designer",
+      "agent": "ct-design-lead",
+      "defaultModel": "sonnet",
+      "taskType": "spec-design",
+      "does": "Game loop, feature specs, quest structure, ROADMAP and spec tree."
+    },
+    {
+      "id": "narrative-director",
+      "name": "Narrative",
+      "agent": "ct-narrative-director",
+      "defaultModel": "haiku",
+      "taskType": "story-text",
+      "does": "Story, lore, characters, quest and dialogue text."
+    },
+    {
+      "id": "engineering-lead",
+      "name": "Engineering",
+      "agent": "ct-engineering-lead",
+      "defaultModel": "sonnet",
+      "taskType": "luau-server",
+      "does": "Server/client Luau, persistence, remotes, performance, Studio sync tooling."
+    },
+    {
+      "id": "balance-lead",
+      "name": "Balance",
+      "agent": "ct-balance-lead",
+      "defaultModel": "sonnet",
+      "taskType": "balance-config",
+      "does": "Economy, progression, drop rates and combat tuning in Config.luau."
+    },
+    {
+      "id": "art-director",
+      "name": "Art Director",
+      "agent": "ct-art-director",
+      "defaultModel": "opus",
+      "taskType": "blender-mesh",
+      "does": "Look and feel, lighting, prefabs, UI theme, Blender meshes, icons."
+    },
+    {
+      "id": "audio-director",
+      "name": "Audio",
+      "agent": "ct-audio-director",
+      "defaultModel": "sonnet",
+      "taskType": "audio",
+      "does": "Music, ambience, SFX, the mix and audio hooks."
+    },
+    {
+      "id": "qa-lead",
+      "name": "Head of QA",
+      "agent": "ct-qa-lead",
+      "defaultModel": "sonnet",
+      "taskType": "qa-playtest",
+      "does": "Play-mode tests, regressions, bug triage, release checklist."
+    },
+    {
+      "id": "factory-engineer",
+      "name": "Factory Engineer",
+      "agent": "ct-factory-engineer",
+      "defaultModel": "sonnet",
+      "taskType": "factory-review",
+      "does": "Studies past runs and improves the Factory itself; builds ideas in the Factory area (its prompts, loops, routing, docs)."
+    }
   ],
   "resources": [
     {
-      "id": "studio", "name": "Roblox Studio", "icon": "🎮", "capacity": 1,
-      "tools": ["^mcp__Roblox_Studio__"],
-      "exceptTools": ["^mcp__Roblox_Studio__(list_roblox_studios|get_studio_state)$"],
-      "commands": ["tools/(push-server|place-export-server|coat-export-server|content-dump-server|prop-audit-server)\\.mjs"]
+      "id": "studio",
+      "name": "Roblox Studio",
+      "icon": "🎮",
+      "capacity": 1,
+      "tools": [
+        "^mcp__Roblox_Studio__"
+      ],
+      "exceptTools": [
+        "^mcp__Roblox_Studio__(list_roblox_studios|get_studio_state)$"
+      ],
+      "commands": [
+        "tools/(push-server|place-export-server|coat-export-server|content-dump-server|prop-audit-server)\\.mjs"
+      ]
     },
-    { "id": "blender", "name": "Blender", "icon": "🧊", "capacity": 1, "tools": ["^mcp__blender__"], "commands": [] },
-    { "id": "uploader", "name": "Asset uploader", "icon": "⬆️", "capacity": 1, "tools": [], "commands": ["tools/upload-assets\\.mjs"] },
-    { "id": "git", "name": "Git commit", "icon": "🌿", "capacity": 1, "tools": [], "commands": ["\\bgit\\b[^|;&\\n]*\\bcommit\\b"] }
+    {
+      "id": "blender",
+      "name": "Blender",
+      "icon": "🧊",
+      "capacity": 1,
+      "tools": [
+        "^mcp__blender__"
+      ],
+      "commands": []
+    },
+    {
+      "id": "uploader",
+      "name": "Asset uploader",
+      "icon": "⬆️",
+      "capacity": 1,
+      "tools": [],
+      "commands": [
+        "tools/upload-assets\\.mjs"
+      ]
+    },
+    {
+      "id": "git",
+      "name": "Git commit",
+      "icon": "🌿",
+      "capacity": 1,
+      "tools": [],
+      "commands": [
+        "\\bgit\\b[^|;&\\n]*\\bcommit\\b"
+      ]
+    }
   ],
   "loops": [
     {
-      "id": "morning-triage", "name": "Morning triage", "cron": "0 9 * * *", "role": "game-manager", "taskType": "triage", "enabled": true,
+      "id": "morning-triage",
+      "name": "Morning triage",
+      "cron": "0 9 * * *",
+      "role": "game-manager",
+      "taskType": "triage",
+      "enabled": true,
       "prompt": "Morning triage. 1) Call factory_status and list_ideas. 2) Triage every idea still in the inbox (set area, kind, task_type, owner_role, priority, needs_spec and the approval verdict with update_idea). 3) Look for ideas stuck in one stage for more than a day and unstick them (send_note to the owner role, or update_idea to on_hold with a reason). 4) Finish with a five-line summary of the factory's state."
     },
     {
-      "id": "idea-scouting", "name": "Idea scouting", "cron": "0 10 * * 1,4", "role": "design-lead", "taskType": "spec-design", "enabled": true,
+      "id": "idea-scouting",
+      "name": "Idea scouting",
+      "cron": "0 10 * * 1,4",
+      "role": "design-lead",
+      "taskType": "spec-design",
+      "enabled": true,
       "prompt": "Idea scouting. Read ROADMAP.md (only the sections you need) and list_ideas to avoid duplicates. Propose at most 3 ideas with propose_idea that move the current pass forward. Prefer ideas that serve an existing owner idea or ROADMAP item and pass its id as parent_id. Brand-new systems or modes are fine to propose, but they will wait for the owner's approval. Do not start building anything."
     },
     {
-      "id": "nightly-qa", "name": "Nightly QA regression", "cron": "0 2 * * *", "role": "qa-lead", "taskType": "qa-playtest", "enabled": true,
+      "id": "nightly-qa",
+      "name": "Nightly QA regression",
+      "cron": "0 2 * * *",
+      "role": "qa-lead",
+      "taskType": "qa-playtest",
+      "enabled": true,
       "prompt": "Nightly regression. Claim Roblox Studio, run the standard new-player regression in Play mode on the current build, and release Studio when done. For every new bug, call propose_idea with kind 'bug', a clear repro and the suspected owner area; update team/BUGS.md as usual. Finish with a pass/fail summary."
     },
     {
-      "id": "checkpoint", "name": "Checkpoint commit", "cron": "30 23 * * *", "role": "game-manager", "taskType": "ops-commit", "enabled": true,
+      "id": "checkpoint",
+      "name": "Checkpoint commit",
+      "cron": "30 23 * * *",
+      "role": "game-manager",
+      "taskType": "ops-commit",
+      "enabled": true,
       "prompt": "Checkpoint. Run node tools/verify.mjs. Using factory_status, find files touched by finished runs that are still uncommitted (git status); never commit a file a live run has claimed or is editing. Commit the finished files with a message crediting the roles. If verify fails, propose_idea a kind 'bug' describing the failure instead of committing."
     },
     {
-      "id": "self-review", "name": "Factory self-review", "cron": "0 8 */3 * *", "role": "factory-engineer", "taskType": "factory-review", "enabled": true,
+      "id": "bible-refresh",
+      "name": "Game Bible refresh",
+      "cron": "0 18 * * *",
+      "role": "design-lead",
+      "taskType": "spec-design",
+      "enabled": true,
+      "prompt": "Game Bible refresh. Read docs/bible/README.md. Compare docs/bible/changelog.md with the newest ROADMAP.md section 4.5 rows and the ideas finished since its last entry (list_ideas level \"idea\" status \"shipped\"). Add any missing days to the changelog, newest first, in plain words. Then fix any section of docs/bible/ that is now out of date (new creatures, items, bosses, features or story). Keep it accurate: facts come from docs/content/, Config.luau and the specs. Commit only docs/bible/ files. If nothing changed, say so and stop."
+    },
+    {
+      "id": "self-review",
+      "name": "Factory self-review",
+      "cron": "0 8 */3 * *",
+      "role": "factory-engineer",
+      "taskType": "factory-review",
+      "enabled": true,
       "prompt": "Factory self-review. Run node factory/tools/digest.mjs --days 3 and study it. Find what wasted time or tokens, what got redone and why, which tool gates blocked work, and which instructions agents keep missing. Make at most 3 focused improvements (CLAUDE.md 'Learned rules', an agent definition, factory/factory.config.json routing or loops, or factory/prompts). Commit each change separately and call record_improvement for each with the evidence. If nothing is worth changing, say so."
     }
   ],
   "routing": {
-    "triage": { "model": "sonnet", "why": "Routing decisions over short idea text; Sonnet is reliable and cheap enough." },
-    "spec-design": { "model": "sonnet", "why": "Design specs need reasoning but not 3D work (owner tier rule)." },
-    "story-text": { "model": "haiku", "why": "Rule-bound writing; owner tier rule: Haiku or Sonnet for text." },
-    "balance-config": { "model": "sonnet", "why": "Numbers plus reasoning about curves (owner tier rule)." },
-    "luau-server": { "model": "sonnet", "why": "Standard backend engineering (owner tier rule)." },
-    "luau-client": { "model": "sonnet", "why": "Client modules and UI code (owner tier rule)." },
-    "ui-client": { "model": "sonnet", "why": "UI layout and client code (owner tier rule)." },
-    "world-geometry": { "model": "opus", "why": "Spatial work: world layout, terrain, the bake (owner tier rule)." },
-    "blender-mesh": { "model": "opus", "why": "3D modelling, rigs and textures (owner tier rule)." },
-    "animation": { "model": "opus", "why": "Bone animation is 3D/spatial (owner tier rule)." },
-    "audio": { "model": "sonnet", "why": "Audio hooks and mix settings (owner tier rule)." },
-    "qa-playtest": { "model": "sonnet", "why": "Multi-step Play-mode testing and triage (owner tier rule)." },
-    "factory-review": { "model": "sonnet", "why": "Analysis of run digests; not art or 3D (owner tier rule)." },
-    "ops-commit": { "model": "haiku", "why": "Run verify and commit finished files; mechanical." }
+    "triage": {
+      "model": "sonnet",
+      "why": "Routing decisions over short idea text; Sonnet is reliable and cheap enough."
+    },
+    "spec-design": {
+      "model": "sonnet",
+      "why": "Design specs need reasoning but not 3D work (owner tier rule)."
+    },
+    "story-text": {
+      "model": "haiku",
+      "why": "Rule-bound writing; owner tier rule: Haiku or Sonnet for text."
+    },
+    "balance-config": {
+      "model": "sonnet",
+      "why": "Numbers plus reasoning about curves (owner tier rule)."
+    },
+    "luau-server": {
+      "model": "sonnet",
+      "why": "Standard backend engineering (owner tier rule)."
+    },
+    "luau-client": {
+      "model": "sonnet",
+      "why": "Client modules and UI code (owner tier rule)."
+    },
+    "ui-client": {
+      "model": "sonnet",
+      "why": "UI layout and client code (owner tier rule)."
+    },
+    "world-geometry": {
+      "model": "opus",
+      "why": "Spatial work: world layout, terrain, the bake (owner tier rule)."
+    },
+    "blender-mesh": {
+      "model": "opus",
+      "why": "3D modelling, rigs and textures (owner tier rule)."
+    },
+    "animation": {
+      "model": "opus",
+      "why": "Bone animation is 3D/spatial (owner tier rule)."
+    },
+    "audio": {
+      "model": "sonnet",
+      "why": "Audio hooks and mix settings (owner tier rule)."
+    },
+    "qa-playtest": {
+      "model": "sonnet",
+      "why": "Multi-step Play-mode testing and triage (owner tier rule)."
+    },
+    "factory-review": {
+      "model": "sonnet",
+      "why": "Analysis of run digests; not art or 3D (owner tier rule)."
+    },
+    "ops-commit": {
+      "model": "haiku",
+      "why": "Run verify and commit finished files; mechanical."
+    }
   },
-  "areas": ["Combat", "World", "Art", "Audio", "Economy", "Progression", "Quests & Story", "UI", "Systems", "Tech", "Factory"]
+  "areas": [
+    "Combat",
+    "World",
+    "Art",
+    "Audio",
+    "Economy",
+    "Progression",
+    "Quests & Story",
+    "UI",
+    "Systems",
+    "Tech",
+    "Factory"
+  ]
 }

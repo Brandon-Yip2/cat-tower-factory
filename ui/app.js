@@ -54,7 +54,7 @@ const STAGES = [
   { id: 'spec', name: 'Spec' }, { id: 'building', name: 'Building' }, { id: 'staged', name: 'Staged' }, { id: 'qa', name: 'QA' },
   { id: 'on_hold', name: 'On hold' },
 ];
-const STAGE_NAME = Object.fromEntries([...STAGES.map((s) => [s.id, s.name]), ['shipped', 'Shipped'], ['rejected', 'Rejected']]);
+const STAGE_NAME = Object.fromEntries([...STAGES.map((s) => [s.id, s.name]), ['shipped', 'Shipped'], ['rejected', 'Rejected'], ['active', 'In progress']]);
 const ORIGIN = { owner: 'you', agent: 'an agent', loop: 'a loop', qa: 'QA' };
 
 // ---------- shared bits ----------
@@ -153,7 +153,7 @@ pages.home = {
             <section class="panel"><h2>Tools in use <a href="#tools">Details</a></h2><div id="tools"></div></section>
           </div>
           <div class="stack">
-            <section class="panel"><h2>The tower <a href="#ideas">Ideas</a></h2><div id="tower"></div></section>
+            <section class="panel"><h2>Ideas in progress <a href="#ideas">All ideas</a></h2><div class="stack" id="homeIdeas"></div></section>
             <section class="panel"><h2>Coming up <a href="#loops">Loops</a></h2><div class="rows" id="coming"></div></section>
           </div>
         </div>
@@ -173,14 +173,8 @@ pages.home = {
     wireIdeaLinks($('#working'));
     $('#tools').innerHTML = h.tools.resources.map((t) => toolRow(t, h.tools.apps)).join('');
     wireRelease($('#tools'));
-    const p = h.pipeline;
-    const floors = [
-      ['shipped', 'Shipped', 'roof'], ['qa', 'In QA'], ['staged', 'Staged, waiting for Studio'], ['building', 'Building'], ['spec', 'Spec'], ['triaged', 'Up next'],
-      ['needs_approval', 'Needs approval', p.needs_approval ? 'hot' : ''], ['inbox', 'Inbox'],
-    ];
-    $('#tower').innerHTML = `<div class="tower">${floors.map(([id, name, cls = '']) => `<a class="floor ${cls} ${['building', 'qa', 'spec', 'staged'].includes(id) && p[id] ? 'live' : ''}" href="#ideas/${id}">
-      <span>${name}</span><b>${p[id] || 0}</b></a>`).join('')}</div><div class="tower-base"></div>
-      <p class="muted small" style="margin-top:8px">${esc(h.pass || 'All passes')}. ${p.on_hold ? `${p.on_hold} on hold.` : ''}</p>`;
+    $('#homeIdeas').innerHTML = h.ideas.length ? h.ideas.map(ideaCard).join('') : '<div class="empty">No ideas in progress. Add one with New idea.</div>';
+    wireIdeaLinks($('#homeIdeas'));
     $('#coming').innerHTML = h.comingUp.length ? h.comingUp.map((l) => `<div class="row"><div class="main"><div class="title">${esc(l.name)}</div>
       <div class="sub">${esc(l.roleName)}, ${esc(l.schedule)}</div></div><div class="side-info">${when(l.next)}</div></div>`).join('')
       : '<div class="empty">No loops are switched on.</div>';
@@ -189,7 +183,7 @@ pages.home = {
 
 pages.backlog = {
   mount() {
-    main.innerHTML = `<div class="page-head"><div><h1>Backlog</h1><p>What every agent is doing and will do next. The Game Manager plans a pass when agents run low on work; you approve it here or on Home. Agents read this same list.</p></div></div>
+    main.innerHTML = `<div class="page-head"><div><h1>Backlog</h1><p>What every agent is doing and will do next, task by task. The Game Manager adds tasks under ideas as agents run low. Agents read this same list.</p></div><a class="btn" href="#tasks/triaged">All tasks by stage</a></div>
       <div class="stack"><section class="panel needs" id="blProposals" hidden><h2>Passes waiting for you</h2><div id="blProposalList"></div></section>
       <div class="roles" id="blRoles"></div>
       <section class="panel" id="blSuggest" hidden><h2>Suggestions from agents</h2><p class="muted small">New features agents came up with. The Game Manager bundles good ones into its next pass; you can also approve one directly from its page.</p><div class="rows" id="blSuggestList"></div></section></div>`;
@@ -200,7 +194,7 @@ pages.backlog = {
     $('#blProposalList').innerHTML = b.proposals.map(proposalHtml).join('');
     wireProposals($('#blProposalList'));
     const item = (i) => `<div class="row"><div class="main click" data-idea="${i.id}"><div>#${i.id} ${esc(i.title)}</div>
-      <div class="sub">${esc(STAGE_NAME[i.status] || i.status)}${i.waiting?.length ? `, waiting for ${i.waiting.map((d) => '#' + d).join(', ')}` : ''}${i.pass_label ? `, ${esc(i.pass_label)}` : ''}</div></div>
+      <div class="sub">${esc(STAGE_NAME[i.status] || i.status)}${i.waiting?.length ? `, waiting for ${i.waiting.map((d) => '#' + d).join(', ')}` : ''}${i.ideaTitle ? `, for ${esc(i.ideaTitle)}` : ''}</div></div>
       <div class="acts"><button class="btn small" data-move="up" data-id="${i.id}" title="Earlier" aria-label="Move earlier">↑</button><button class="btn small" data-move="down" data-id="${i.id}" title="Later" aria-label="Move later">↓</button><button class="btn small danger" data-drop="${i.id}" title="Remove from the backlog" aria-label="Remove">✕</button></div></div>`;
     $('#blRoles').innerHTML = b.roles.map((r) => `<section class="panel role">
       <h2><span><span class="dot ${r.working.length ? 'working' : r.next.length ? '' : 'queued'}"></span> ${esc(r.name)}</span><span class="muted small">${r.working.length ? `${r.working.length} working` : r.next.length ? 'work ready' : 'nothing queued'}</span></h2>
@@ -219,11 +213,130 @@ pages.backlog = {
   },
 };
 
-const ideaFilters = { tab: 'inbox', pass: '', area: '', origin: '', q: '' };
+const IDEA_STATUS = { needs_approval: 'Waiting for you', active: 'In progress', on_hold: 'On hold', shipped: 'Done', rejected: 'Turned down' };
+function ideaCard(i) {
+  const total = i.taskCount - i.dropped;
+  const pct = total ? Math.round((i.done / total) * 100) : 0;
+  const now = i.workingNames?.length ? `Now: ${i.workingNames.map(esc).join(', ')}` : i.status === 'active' ? (total ? 'Waiting for a free agent' : 'The Game Manager is planning its tasks') : '';
+  return `<div class="idea-card click" data-idea="${i.id}">
+    <div class="idea-top"><h3>${esc(i.title)}</h3><span class="pill ${i.status === 'active' ? 'leaf' : i.status === 'needs_approval' ? 'attention' : ''}">${esc(IDEA_STATUS[i.status] || i.status)}</span></div>
+    ${i.description ? `<p class="muted">${esc(i.description.length > 240 ? `${i.description.slice(0, 239)}…` : i.description)}</p>` : ''}
+    ${total ? `<div class="progress"><i style="width:${pct}%"></i></div>` : ''}
+    <div class="sub">${total ? `${i.done} of ${total} tasks done` : 'No tasks yet'}${now ? `. ${now}` : ''}</div>
+  </div>`;
+}
+
 pages.ideas = {
+  mount() {
+    main.innerHTML = `<div class="page-head"><div><h1>Ideas</h1><p>The big things the team is working on, in plain words. Open one to see the tasks under it and who is doing them. The Game Manager proposes new ideas; you approve them.</p></div>
+        <button class="btn primary" id="ideasNew">New idea</button></div>
+      <div class="stack">
+        <section class="panel needs" id="ipWaiting" hidden><h2>Waiting for you</h2><div id="ipProposals"></div></section>
+        <section><h2>In progress</h2><div class="idea-grid" id="ipActive"></div></section>
+        <section id="ipHoldWrap" hidden><h2>On hold</h2><div class="idea-grid" id="ipHold"></div></section>
+        <details class="panel" id="ipDoneWrap"><summary><b>Done</b> <span class="muted" id="ipDoneCount"></span></summary><div class="idea-grid" id="ipDone" style="margin-top:12px"></div></details>
+        <details class="panel" id="ipNoWrap" hidden><summary><b>Turned down</b></summary><div class="idea-grid" id="ipNo" style="margin-top:12px"></div></details>
+      </div>`;
+    $('#ideasNew').addEventListener('click', () => openDrawer('new-idea'));
+  },
+  async refresh() {
+    const d = await api('/api/ideas?level=idea');
+    const by = (s) => d.ideas.filter((i) => i.status === s);
+    $('#ipWaiting').hidden = !d.proposals.length;
+    $('#ipProposals').innerHTML = d.proposals.map(proposalHtml).join('');
+    wireProposals($('#ipProposals'));
+    const fill = (sel, list, empty) => { $(sel).innerHTML = list.length ? list.map(ideaCard).join('') : `<div class="empty">${empty}</div>`; wireIdeaLinks($(sel)); };
+    fill('#ipActive', by('active'), 'Nothing in progress. Add an idea, or the Game Manager will propose one when the team runs out of work.');
+    $('#ipHoldWrap').hidden = !by('on_hold').length;
+    fill('#ipHold', by('on_hold'), '');
+    $('#ipDoneCount').textContent = `(${by('shipped').length})`;
+    fill('#ipDone', by('shipped'), 'Nothing finished yet.');
+    $('#ipNoWrap').hidden = !by('rejected').length;
+    fill('#ipNo', by('rejected'), '');
+  },
+};
+
+// Small Markdown renderer for the Bible: headings, paragraphs, lists, tables, quotes, rules, bold,
+// italics, code and links. Everything is escaped first, so file content can never inject HTML.
+function mdInline(s) {
+  return esc(s)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '$1');
+}
+function md(text) {
+  const lines = String(text).replace(/\r/g, '').split('\n');
+  const out = [];
+  let i = 0;
+  const isTableSep = (l) => /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/.test(l);
+  const cells = (l) => l.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
+  while (i < lines.length) {
+    const l = lines[i];
+    if (!l.trim() || /^<!--.*-->$/.test(l.trim())) { i += 1; continue; }
+    const h = /^(#{1,4})\s+(.*)$/.exec(l);
+    if (h) { const n = Math.min(h[1].length + 1, 5); out.push(`<h${n}>${mdInline(h[2])}</h${n}>`); i += 1; continue; }
+    if (/^\s*(---|\*\*\*)\s*$/.test(l)) { out.push('<hr>'); i += 1; continue; }
+    if (l.includes('|') && i + 1 < lines.length && isTableSep(lines[i + 1])) {
+      const head = cells(l);
+      i += 2;
+      const rows = [];
+      while (i < lines.length && lines[i].includes('|') && lines[i].trim()) { rows.push(cells(lines[i])); i += 1; }
+      out.push(`<div class="md-table"><table><thead><tr>${head.map((c) => `<th>${mdInline(c)}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${mdInline(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`);
+      continue;
+    }
+    if (/^>\s?/.test(l)) {
+      const q = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) { q.push(lines[i].replace(/^>\s?/, '')); i += 1; }
+      out.push(`<blockquote>${md(q.join('\n'))}</blockquote>`);
+      continue;
+    }
+    const li = /^(\s*)([-*]|\d+\.)\s+(.*)$/.exec(l);
+    if (li) {
+      const ordered = /\d/.test(li[2]);
+      const items = [];
+      while (i < lines.length) {
+        const m = /^(\s*)([-*]|\d+\.)\s+(.*)$/.exec(lines[i]);
+        if (m) { items.push(m[3]); i += 1; } else if (/^\s{2,}\S/.test(lines[i]) && items.length) { items[items.length - 1] += ` ${lines[i].trim()}`; i += 1; } else break;
+      }
+      out.push(`<${ordered ? 'ol' : 'ul'}>${items.map((x) => `<li>${mdInline(x)}</li>`).join('')}</${ordered ? 'ol' : 'ul'}>`);
+      continue;
+    }
+    const para = [];
+    while (i < lines.length && lines[i].trim() && !/^(#{1,4}\s|>|\s*([-*]|\d+\.)\s|\s*---\s*$)/.test(lines[i]) && !(lines[i].includes('|') && i + 1 < lines.length && isTableSep(lines[i + 1]))) { para.push(lines[i].trim()); i += 1; }
+    if (para.length) out.push(`<p>${mdInline(para.join(' '))}</p>`); else i += 1;
+  }
+  return out.join('\n');
+}
+
+let bibleTab = null;
+pages.bible = {
+  mount(sub) {
+    if (sub) bibleTab = sub;
+    main.innerHTML = `<div class="page-head"><div><h1>Game Bible</h1><p>Everything about Cat Tower in plain words: the world, the story, how it plays, every item, creature and boss. The team updates it whenever an idea is finished.</p></div></div>
+      <div class="tabs" id="bibleTabs"></div>
+      <article class="panel bible" id="bibleBody"></article>`;
+  },
+  async refresh() {
+    const b = await api('/api/bible');
+    const tabs = [...b.sections, ...(b.changelog ? [{ ...b.changelog, id: 'changelog' }] : [])];
+    if (!tabs.length) { $('#bibleBody').innerHTML = '<div class="empty">The Bible has not been started yet.</div>'; return; }
+    if (!tabs.some((t) => t.id === bibleTab)) bibleTab = tabs[0].id;
+    $('#bibleTabs').innerHTML = tabs.map((t) => `<button class="tab ${t.id === bibleTab ? 'on' : ''}" data-tab="${esc(t.id)}">${esc(t.title)}</button>`).join('');
+    $('#bibleTabs').querySelectorAll('[data-tab]').forEach((x) => x.addEventListener('click', () => { location.hash = `#bible/${x.dataset.tab}`; }));
+    const cur = tabs.find((t) => t.id === bibleTab);
+    const scroll = window.scrollY;
+    $('#bibleBody').innerHTML = `${md(cur.markdown)}<p class="muted small bible-updated">Last updated ${when(cur.updated)}.</p>`;
+    window.scrollTo(0, scroll);
+  },
+};
+
+const ideaFilters = { tab: 'inbox', pass: '', area: '', origin: '', q: '' };
+pages.tasks = {
   mount(sub) {
     if (sub) ideaFilters.tab = sub === 'shipped' ? 'done' : sub;
-    main.innerHTML = `<div class="page-head"><div><h1>Ideas</h1><p>Every idea, where it came from and where it is now. Live work sits in the stage tabs; finished work is under Done, grouped by week.</p></div>
+    main.innerHTML = `<div class="page-head"><div><h1>All tasks</h1><p>Every task by stage. Ideas group them; this view is for digging in.</p></div>
         <button class="btn primary" id="ideasNew">New idea</button></div>
       <div class="tabs" id="tabs"></div>
       <div class="filters">
@@ -234,7 +347,7 @@ pages.ideas = {
         <input type="search" id="fQ" placeholder="Search ideas" aria-label="Search ideas">
       </div>
       <section class="panel"><div id="ideaList"></div></section>`;
-    $('#ideasNew').addEventListener('click', () => openDrawer('new-idea'));
+    $('#ideasNew').hidden = true;
     for (const [id, key] of [['#fPass', 'pass'], ['#fArea', 'area'], ['#fOrigin', 'origin']]) {
       $(id).addEventListener('change', (e) => { ideaFilters[key] = e.target.value; this.refresh(); });
     }
@@ -262,7 +375,7 @@ pages.ideas = {
       if (s.id === 'on_hold' && !n && f.tab !== s.id) return '';
       return `<button class="tab ${f.tab === s.id ? 'on' : ''} ${s.id === 'needs_approval' && n ? 'attn' : ''}" data-tab="${s.id}">${s.name}<b>${n}</b></button>`;
     }).join('');
-    $('#tabs').querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => { f.tab = b.dataset.tab; location.hash = `#ideas/${f.tab}`; }));
+    $('#tabs').querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => { f.tab = b.dataset.tab; location.hash = `#tasks/${f.tab}`; }));
     const list = $('#ideaList');
     if (!data.ideas.length) {
       list.innerHTML = `<div class="empty">${f.tab === 'inbox' ? 'The inbox is empty. New ideas from you, the loops and QA land here first.' : `Nothing in ${esc(STAGE_NAME[f.tab] || 'Done')}${f.q || f.area || f.origin ? ' for these filters' : ''}.`}</div>`;
@@ -441,26 +554,53 @@ function closeDrawer() { drawer = null; $('#drawer').hidden = true; $('#scrim').
 $('#scrim').addEventListener('click', closeDrawer);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && drawer) closeDrawer(); });
 
+// A high-level idea: plain summary, progress, and the tasks under it with who is on them.
+function renderIdeaDrawer(el, close, i) {
+  const scroll = el.scrollTop;
+  const tasks = i.children;
+  const live = tasks.filter((t) => t.workingName);
+  const open = tasks.filter((t) => !t.workingName && !['shipped', 'rejected'].includes(t.status));
+  const done = tasks.filter((t) => t.status === 'shipped');
+  const total = tasks.filter((t) => t.status !== 'rejected').length;
+  const taskRow = (t) => `<div class="row click" data-idea="${t.id}"><div class="main"><div>${esc(t.title)}</div>
+    <div class="sub">${esc(t.ownerName || 'unassigned')}, ${esc(STAGE_NAME[t.status] || t.status)}${t.waiting?.length ? `, waiting for ${t.waiting.map((x) => '#' + x).join(', ')}` : ''}</div></div></div>`;
+  el.innerHTML = `${close}<h1>${esc(i.title)}</h1>
+    <p><span class="pill ${i.status === 'active' ? 'leaf' : i.status === 'needs_approval' ? 'attention' : ''}">${esc(IDEA_STATUS[i.status] || i.status)}</span>
+      <span class="muted">${i.origin === 'owner' ? 'Your idea' : `Proposed by ${esc(i.origin_role || 'an agent')}`}</span></p>
+    ${i.description ? `<p style="white-space:pre-wrap">${esc(i.description)}</p>` : ''}
+    ${total ? `<div class="progress" style="max-width:none"><i style="width:${Math.round((done.length / total) * 100)}%"></i></div><p class="small muted">${done.length} of ${total} tasks done</p>` : ''}
+    ${i.status === 'needs_approval' ? `<section><div class="rate"><button class="btn primary" id="dApprove">Approve</button><button class="btn" id="dReject">Turn down</button></div></section>` : ''}
+    <section><h3>Being worked on now</h3>${live.length ? `<div class="rows">${live.map((t) => `<div class="row click" data-idea="${t.id}"><span class="dot working"></span><div class="main"><div class="title">${esc(t.workingName)}</div><div class="sub">${esc(t.title)}</div></div></div>`).join('')}</div>` : '<p class="muted">Nobody right now.</p>'}</section>
+    <section><h3>Planned tasks</h3>${open.length ? `<div class="rows">${open.map(taskRow).join('')}</div>` : `<p class="muted">${i.status === 'active' ? 'None left. The Game Manager adds tasks or closes the idea when it is finished.' : 'None.'}</p>`}</section>
+    ${done.length ? `<details><summary><b>Done</b> <span class="muted">(${done.length})</span></summary><div class="rows">${done.map(taskRow).join('')}</div></details>` : ''}
+    ${!i.standing && !['shipped', 'rejected'].includes(i.status) ? `<section class="rate"><button class="btn small" id="dHold">${i.status === 'on_hold' ? 'Resume' : 'Put on hold'}</button><button class="btn small" id="dFinish">Mark as done</button><button class="btn small danger" id="dDrop">Drop this idea</button></section>` : ''}`;
+  el.scrollTop = scroll;
+  $('#dClose').addEventListener('click', closeDrawer);
+  wireIdeaLinks(el);
+  $('#dApprove')?.addEventListener('click', () => act(() => api(`/api/ideas/${i.id}/approve`, {}), 'Approved'));
+  $('#dReject')?.addEventListener('click', () => act(() => api(`/api/ideas/${i.id}/reject`, {}), 'Turned down'));
+  $('#dHold')?.addEventListener('click', () => act(() => api(`/api/ideas/${i.id}/status`, { status: i.status === 'on_hold' ? 'active' : 'on_hold', note: 'by owner' }), 'Updated'));
+  $('#dFinish')?.addEventListener('click', () => { if (confirm('Mark this idea as done? Open tasks under it stay in the backlog unless you drop them.')) act(() => api(`/api/ideas/${i.id}/status`, { status: 'shipped', note: 'marked done by the owner' }), 'Marked done'); });
+  $('#dDrop')?.addEventListener('click', () => { if (confirm('Drop this idea and stop its open tasks?')) act(() => api(`/api/ideas/${i.id}/drop`, {}), 'Dropped'); });
+}
+
 async function renderDrawer(first = false) {
   if (!drawer) return;
   const el = $('#drawer');
   const close = '<button class="btn small close" id="dClose" aria-label="Close">Close</button>';
   if (drawer.type === 'new-idea') {
     if (!first) return;
-    const areas = (await api('/api/ideas?status=inbox')).areas;
-    el.innerHTML = `${close}<h1>New idea</h1><p class="muted">It goes to the inbox. Morning triage, or the next dispatcher pass, routes it to the right agent.</p>
+    el.innerHTML = `${close}<h1>New idea</h1><p class="muted">Describe what you want in your own words. The Game Manager breaks it into tasks for the team, and agents start as soon as they are free.</p>
       <form class="form" id="ideaForm">
-        <label class="field">What should happen?<input type="text" name="title" required maxlength="140" placeholder="Old Gnaw telegraphs his snap with a ground shadow"></label>
-        <label class="field">Details (optional)<textarea name="description" rows="5" placeholder="Why it matters, what good looks like, anything to avoid"></textarea></label>
-        <div class="two"><label class="field">Area<select name="area"><option value="">Let triage decide</option>${areas.map((a) => `<option>${esc(a)}</option>`).join('')}</select></label>
-        <label class="field">Kind<select name="kind"><option value="feature">Feature</option><option value="bug">Bug</option><option value="polish">Polish</option><option value="tuning">Tuning</option><option value="content">Content</option><option value="tech">Tech</option></select></label></div>
-        <label class="field">Priority<select name="priority"><option value="1">High</option><option value="2" selected>Normal</option><option value="3">Low</option></select></label>
+        <label class="field">What should the game get?<input type="text" name="title" required maxlength="140" placeholder="Make the first boss fight more exciting"></label>
+        <label class="field">More detail (optional)<textarea name="description" rows="6" placeholder="Why it matters, what good looks like, games you like that do it well, anything to avoid"></textarea></label>
+        <label class="field">How important?<select name="priority"><option value="1">High</option><option value="2" selected>Normal</option><option value="3">Low</option></select></label>
         <div><button class="btn primary">Add idea</button></div></form>`;
     $('#dClose').addEventListener('click', closeDrawer);
     $('#ideaForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const f = Object.fromEntries(new FormData(e.target));
-      const r = await act(() => api('/api/ideas', { ...f, priority: Number(f.priority) }), (i) => `Idea #${i.id} added`);
+      const r = await act(() => api('/api/ideas', { ...f, priority: Number(f.priority) }), (i) => `Idea added: the Game Manager will plan its tasks`);
       if (r) openDrawer('idea', r.id);
     });
     $('input[name=title]', el).focus();
@@ -468,11 +608,12 @@ async function renderDrawer(first = false) {
   }
   if (drawer.type === 'idea') {
     const i = await api(`/api/ideas/${drawer.id}`);
+    if (i.level === 'idea') { renderIdeaDrawer(el, close, i); return; }
     const scroll = el.scrollTop;
     const canRate = ['shipped', 'qa', 'on_hold'].includes(i.status) || i.runs.length;
     el.innerHTML = `${close}<h1>#${i.id} ${esc(i.title)}</h1>
       <p><span class="pill ${i.status === 'needs_approval' ? 'attention' : i.status === 'shipped' ? 'leaf' : ''}">${esc(STAGE_NAME[i.status] || i.status)}</span>
-        <span class="muted">From ${esc(i.origin === 'owner' ? 'you' : i.origin_role || ORIGIN[i.origin])}${i.parent ? `, serving <a href="#" data-idea="${i.parent.id}">#${i.parent.id} ${esc(i.parent.title)}</a>` : ''}${i.owner_role ? `, built by ${esc(i.ownerName)}` : ''}${i.task_type ? `, ${esc(i.task_type)}` : ''}</span></p>
+        <span class="muted">${i.parent ? `Task in <a href="#" data-idea="${i.parent.id}">${esc(i.parent.title)}</a>, from` : 'From'} ${esc(i.origin === 'owner' ? 'you' : i.origin_role || ORIGIN[i.origin])}${i.owner_role ? `, built by ${esc(i.ownerName)}` : ''}${i.task_type ? `, ${esc(i.task_type)}` : ''}</span></p>
       ${i.deps.length ? `<p class="small">Starts after ${i.deps.map((d) => `<a href="#" data-idea="${d.id}">#${d.id} ${esc(d.title)}</a> (${esc(STAGE_NAME[d.status] || d.status)})`).join(', ')}.</p>` : ''}
       ${i.description ? `<p style="white-space:pre-wrap">${esc(i.description)}</p>` : ''}
       ${i.summary ? `<section><h3>What shipped</h3><p style="white-space:pre-wrap">${esc(i.summary)}</p></section>` : ''}

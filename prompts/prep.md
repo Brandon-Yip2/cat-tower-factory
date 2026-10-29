@@ -10,7 +10,7 @@ ships, so don't try them. When the preparation is done, call update_idea with st
 what is ready and what is left for your Studio turn, then end your turn. The Factory resumes this same session when
 it is your turn.
 
-Before you finish, suggest follow-up work for the other roles with propose_idea (one call each, specific, with
-the owner_role who should do it in the description): bugs, polish and tuning in existing systems go straight to the
-backlog; new features go into the Game Manager's next pass for the owner. Check list_backlog first so you don't
+Before you finish, add follow-up work you noticed for the other roles with add_task (one call each, specific, under
+the idea it serves; bugs and cleanups under "Bug fixes and polish"). A brand-new feature goes to propose_idea as a
+suggestion for the Game Manager. Check list_backlog first so you don't
 suggest what is already queued.

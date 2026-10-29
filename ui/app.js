@@ -217,7 +217,11 @@ const IDEA_STATUS = { needs_approval: 'Waiting for you', active: 'In progress', 
 function ideaCard(i) {
   const total = i.taskCount - i.dropped;
   const pct = total ? Math.round((i.done / total) * 100) : 0;
-  const now = i.workingNames?.length ? `Now: ${i.workingNames.map(esc).join(', ')}` : i.status === 'active' ? (total ? 'Waiting for a free agent' : 'The Game Manager is planning its tasks') : '';
+  const now = i.workingNames?.length ? `Now: ${i.workingNames.map(esc).join(', ')}`
+    : i.status !== 'active' ? ''
+      : !total ? 'The Game Manager is planning its tasks'
+        : i.done === total ? (i.standing ? 'All caught up' : 'All tasks done; the Game Manager will close it or add more')
+          : 'Waiting for a free agent';
   return `<div class="idea-card click" data-idea="${i.id}">
     <div class="idea-top"><h3>${esc(i.title)}</h3><span class="pill ${i.status === 'active' ? 'leaf' : i.status === 'needs_approval' ? 'attention' : ''}">${esc(IDEA_STATUS[i.status] || i.status)}</span></div>
     ${i.description ? `<p class="muted">${esc(i.description.length > 240 ? `${i.description.slice(0, 239)}…` : i.description)}</p>` : ''}
